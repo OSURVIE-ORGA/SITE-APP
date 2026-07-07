@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 
 <!-- Mirrored from osurvie.fr/orecup.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:30 GMT -->
@@ -22,7 +22,8 @@
 <meta name="twitter:description" content="O'Recup lutte contre le gaspillage alimentaire en redistribuant des invendus à ceux qui en ont le plus besoin. Découvrez cette action solidaire portée par O’SURVIE." />
 <meta name="twitter:image" content="orecup-2.html" />
   <link rel="stylesheet" href="../../assets/css/style.css" />
-<link rel="stylesheet" href="../../assets/css/actions/orecup.css" />
+<link rel="stylesheet" href="../../assets/css/actions/shared-action.css" />
+  <link rel="stylesheet" href="../../assets/css/actions/orecup.css" />
 </head>
 <body>
 <div id="site-nav-mount"></div>
@@ -53,76 +54,32 @@
 
   <div class="carousel-container">
     <div class="carousel" id="carousel">
-      <div class="carousel-slide"><img src="../../photos/orecup/1.jpg" alt="Dépôt de denrées à l'hôtel social"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/2.jpg" alt="La solidarité sous tous les angles"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/3.jpg" alt="Chargement des dons dans le véhicule"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/4.jpg" alt="Des sièges remplis d’espoir"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/5.jpg" alt="Approvisionnement en denrées au sein du foyer Adoma"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/6.jpg" alt="Nouveau chargement anti-gaspi"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/7.jpg" alt="Des produits bio sauvés du gaspillage"></div>
-            <div class="carousel-slide"><img src="../../photos/orecup/8.jpg" alt="Carton par carton, la solidarité s’empile"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/10.jpg" alt="Fruits frais et pain du jour sauvés"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/11.jpg" alt="Sandwichs et viandes froides"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/12.jpg" alt="Fraises et fromages prêts à être offerts"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/13.jpg" alt="Empilement des produits alimentaires"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/14.jpg" alt="Des denrées partout, prêtes à partir"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/15.jpg" alt="Les dons réceptionnés à l'hôtel social"></div>
-      <div class="carousel-slide"><img src="../../photos/orecup/16.jpg" alt="Les dons déposés prêts à nourrir"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/1.jpg" alt="Dépôt de denrées à l'hôtel social"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/2.jpg" alt="La solidarité sous tous les angles"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/3.jpg" alt="Chargement des dons dans le véhicule"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/4.jpg" alt="Des sièges remplis d’espoir"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/5.jpg" alt="Approvisionnement en denrées au sein du foyer Adoma"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/6.jpg" alt="Nouveau chargement anti-gaspi"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/7.jpg" alt="Des produits bio sauvés du gaspillage"></div>
+            <div class="carousel-slide"><img src="../../assets/images/photos/orecup/8.jpg" alt="Carton par carton, la solidarité s’empile"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/10.jpg" alt="Fruits frais et pain du jour sauvés"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/11.jpg" alt="Sandwichs et viandes froides"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/12.jpg" alt="Fraises et fromages prêts à être offerts"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/13.jpg" alt="Empilement des produits alimentaires"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/14.jpg" alt="Des denrées partout, prêtes à partir"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/15.jpg" alt="Les dons réceptionnés à l'hôtel social"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/orecup/16.jpg" alt="Les dons déposés prêts à nourrir"></div>
         </div>
 
-    <button class="carousel-btn prev" onclick="prevSlide()">❮</button>
-    <button class="carousel-btn next" onclick="nextSlide()">❯</button>
+    <button class="carousel-btn prev" >❮</button>
+    <button class="carousel-btn next" >❯</button>
 
     <div class="caption" id="caption">Récupération de pain en boulangerie</div>
   </div>
 
   <button class="join-btn" onclick="alert('Vous êtes commerçant ? Contactez-nous pour faire un don alimentaire solidaire !')">Proposer un partenariat</button>
 
-  <script>
-    const slides = document.querySelectorAll('.carousel-slide');
-    const carousel = document.getElementById('carousel');
-    const captionEl = document.getElementById('caption');
-    let currentIndex = 0;
-
-    const captionsList = [
-      "Dépôt de denrées à l'hôtel social",
-      "La solidarité sous tous les angles",
-      "Chargement des dons dans le véhicule",
-      "Des sièges remplis d’espoir",
-      "Approvisionnement en denrées au sein du foyer Adoma",
-      "Nouveau chargement anti-gaspi",
-      "Des produits bio sauvés du gaspillage",
-      "Carton par carton, la solidarité s’empile",
-      "Fruits frais et pain du jour sauvés",
-      "Sandwichs, viandes froides...",
-      "Fraises et fromages prêts à être offerts",
-      "Empilement des produits alimentaires",
-      "Des denrées partout, prêtes à partir",
-      "Les dons réceptionnés à l’hôtel social",
-      "Les dons déposés prêts à nourrir",
-    ];
-
-    function updateCarousel() {
-      carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
-      captionEl.textContent = captionsList[currentIndex];
-    }
-
-    function nextSlide() {
-      currentIndex = (currentIndex + 1) % slides.length;
-      updateCarousel();
-    }
-
-    function prevSlide() {
-      currentIndex = (currentIndex - 1 + slides.length) % slides.length;
-      updateCarousel();
-    }
-
-    let autoSlide = setInterval(nextSlide, 6000);
-    const container = document.querySelector('.carousel-container');
-    container.addEventListener('mouseenter', () => clearInterval(autoSlide));
-    container.addEventListener('mouseleave', () => autoSlide = setInterval(nextSlide, 6000));
-    updateCarousel();
-  </script>
+  <script src="../../assets/js/carousel.js"></script>
 </div>
 
 <div id="site-footer-mount"></div>

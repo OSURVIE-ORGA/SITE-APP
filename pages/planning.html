@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 
 <!-- Mirrored from osurvie.fr/planning.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:01 GMT -->
@@ -71,23 +71,7 @@
     </div>
   </section>
 
-  <script>
-    // Affichage automatique entre novembre et février avec effet d'apparition
-    const mois = new Date().getMonth(); // 0 = janvier, 11 = décembre
-    const blocs = [
-      document.getElementById('collecte-vetements'),
-      document.getElementById('stand-noel')
-    ];
 
-    if ([10, 11, 0, 1].includes(mois)) { // novembre à février
-      blocs.forEach(bloc => {
-        if (bloc) { // sécurité si l'élément existe
-          bloc.style.display = 'block';
-          setTimeout(() => bloc.classList.add('visible'), 100);
-        }
-      });
-    }
-  </script>
 
   <main>
     <h2>Planning régulier des ateliers et sorties</h2>
@@ -121,6 +105,7 @@
 
   <div id="site-footer-mount"></div>
 <script src="../assets/js/components.js"></script>
+<script src="../assets/js/planning.js"></script>
 </body>
 
 <!-- Mirrored from osurvie.fr/planning.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:01 GMT -->

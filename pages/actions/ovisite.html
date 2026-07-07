@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 
 <!-- Mirrored from osurvie.fr/ovisite.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:30 GMT -->
@@ -24,7 +24,8 @@
 <meta name="twitter:image" content="ovisite-2.html" />
 
 <link rel="stylesheet" href="../../assets/css/style.css" />
-<link rel="stylesheet" href="../../assets/css/actions/ovisite.css" />
+<link rel="stylesheet" href="../../assets/css/actions/shared-action.css" />
+  <link rel="stylesheet" href="../../assets/css/actions/ovisite.css" />
 </head>
 <body>
 <div id="site-nav-mount"></div>
@@ -49,50 +50,18 @@
 
   <div class="carousel-container" aria-label="Carrousel de photos de visite">
     <div class="carousel" id="carousel">
-      <div class="carousel-slide"><img src="../../photos/citations/1.png" alt="Présence bienveillante"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/citations/1.png" alt="Présence bienveillante"></div>
     </div>
 
-    <button class="carousel-btn prev" aria-label="Image précédente" onclick="prevSlide()">❮</button>
-    <button class="carousel-btn next" aria-label="Image suivante" onclick="nextSlide()">❯</button>
+    <button class="carousel-btn prev" aria-label="Image précédente" >❮</button>
+    <button class="carousel-btn next" aria-label="Image suivante" >❯</button>
 
     <div class="caption" id="caption">Visite chaleureuse</div>
   </div>
 
   <button class="join-btn" onclick="alert('Merci de votre intérêt ! Contactez-nous pour rejoindre O’Visite.')">Devenir bénévole</button>
 
-  <script>
-    const slides = document.querySelectorAll('.carousel-slide');
-    const carousel = document.getElementById('carousel');
-    const captionEl = document.getElementById('caption');
-    let currentIndex = 0;
-
-    const captionsList = [
-
-      "Ici, les mots suffisent."
-    ];
-
-    function updateCarousel() {
-      carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
-      captionEl.textContent = captionsList[currentIndex] || '';
-    }
-
-    function nextSlide() {
-      currentIndex = (currentIndex + 1) % slides.length;
-      updateCarousel();
-    }
-
-    function prevSlide() {
-      currentIndex = (currentIndex - 1 + slides.length) % slides.length;
-      updateCarousel();
-    }
-
-    let autoSlide = setInterval(nextSlide, 6000);
-    const container = document.querySelector('.carousel-container');
-    container.addEventListener('mouseenter', () => clearInterval(autoSlide));
-    container.addEventListener('mouseleave', () => autoSlide = setInterval(nextSlide, 6000));
-
-    updateCarousel();
-  </script>
+  <script src="../../assets/js/carousel.js"></script>
 
 
 

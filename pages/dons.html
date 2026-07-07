@@ -162,24 +162,7 @@
 </main>
 
 
-<script>
-(function(){
-  var nav = document.getElementById('siteNav');
-  var toggle = document.getElementById('navToggle');
-  var links = document.getElementById('navLinks');
-  if (!nav || !toggle || !links) return;
-  window.addEventListener('scroll', function() {
-    nav.classList.toggle('scrolled', window.scrollY > 40);
-  });
-  toggle.addEventListener('click', function() {
-    var open = links.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-  links.querySelectorAll('a').forEach(function(a) {
-    a.addEventListener('click', function() { links.classList.remove('open'); });
-  });
-})();
-</script>
+
 
 <div id="site-footer-mount"></div>
 <script src="../assets/js/components.js"></script>

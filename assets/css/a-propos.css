@@ -9,43 +9,7 @@
       margin: 0;
       padding-top: 78px;
     }
-
-    header {
-      text-align: center;
-      padding: 30px 10px 10px 10px;
-      background-color: var(--c-white);
-      border-bottom: 2px solid #d6c9b6;
-      position: relative;
-    }
-
-    .accueil-link {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 0.95rem;
-      background-color: #f5e8d8;
-      padding: 6px 12px;
-      border-radius: 6px;
-      text-decoration: none;
-      color: var(--c-text);
-      font-weight: bold;
-      border: 1px solid #d6c9b6;
-    }
-
-    .accueil-link:hover {
-      background-color: #e8dac5;
-      color: #ad8a56;
-    }
-
-    header h1 {
-      font-weight: 700;
-      font-size: 2.2rem;
-      margin: 10px 0;
-      color: var(--c-text);
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .gold {
+.gold {
       color: var(--c-accent);
       font-family: 'Kanit', sans-serif;
       font-weight: 700;
@@ -74,28 +38,7 @@
       margin: 20px 0;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
-    footer {
-      text-align: center;
-      padding: 20px 10px;
-      font-size: 0.9rem;
-      color: var(--c-text);
-      margin-top: 40px;
-      border-top: 1px solid #d6c9b6;
-    }
-
-    footer a {
-      color: var(--c-accent);
-      margin: 0 10px;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
-    .engagements-label {
+.engagements-label {
       margin-top: 30px;
       margin-bottom: 10px;
     }
@@ -110,14 +53,5 @@
         margin-left: 16px;
         margin-right: 16px;
       }
-
-      header h1 {
-        font-size: 1.7rem;
-      }
-
-      .accueil-link {
-        font-size: 0.85rem;
-        padding: 5px 10px;
-      }
-    }
+}
 
