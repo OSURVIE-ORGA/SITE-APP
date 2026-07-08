@@ -1,2 +1,10 @@
 /* Styles spécifiques à opartage.html */
 /* Les variables de couleur sont définies dans shared-action.css */
+
+.subtitle {
+  font-size: 1.2rem;
+  color: #a0522d;
+  margin-bottom: 24px;
+  text-align: center;
+  font-weight: 500;
+}

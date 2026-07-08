@@ -1,2 +1,6 @@
 /* Styles spécifiques à orecup.html */
 /* Les variables de couleur sont définies dans shared-action.css */
+
+.carousel-container {
+  margin-top: 20px;
+}

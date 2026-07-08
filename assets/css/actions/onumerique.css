@@ -1,2 +1,10 @@
 /* Styles spécifiques à onumerique.html */
 /* Les variables de couleur sont définies dans shared-action.css */
+
+body {
+  padding: 80px 20px 50px;
+}
+
+.carousel-container {
+  margin-top: 20px;
+}

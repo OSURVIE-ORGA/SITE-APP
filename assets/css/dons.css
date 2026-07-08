@@ -270,6 +270,7 @@
     background: var(--gradient-dark) !important;
     border: none !important;
     color: var(--c-white);
+    text-align: center;
     box-sizing: border-box;
   }
 

@@ -1,2 +1,6 @@
 /* Styles spécifiques à cafesolidaire.html */
 /* Les variables de couleur sont définies dans shared-action.css */
+
+.join-btn {
+  margin-top: 0;
+}
