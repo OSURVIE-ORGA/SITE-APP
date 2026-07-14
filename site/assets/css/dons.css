@@ -233,8 +233,8 @@
   }
   .reason-num {
     font-family: 'Courier New', Consolas, monospace;
-    font-size: 12px;
-    color: #8E6A4A;
+    font-size: 14px;
+    color: #78583F;
     padding-top: 6px;
     letter-spacing: 0.05em;
     font-weight: 500;
@@ -332,8 +332,8 @@
   }
   .quote-author {
     font-family: 'Courier New', Consolas, monospace;
-    font-size: 11px;
-    color: #8E6A4A;
+    font-size: 12px;
+    color: #78583F;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }

@@ -431,6 +431,7 @@ main {
 
 .site-footer-cols {
   display: grid;
+  text-align: left;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
   flex: 0 1 640px;
@@ -509,6 +510,7 @@ main {
   .site-footer-brand,
   .site-footer-cols {
     flex-basis: auto;
+    text-align: center;
     width: 100%;
   }
 }
@@ -516,6 +518,7 @@ main {
 @media (max-width: 600px) {
   .site-footer { padding: 48px 20px 24px; }
   .site-footer-cols {
+    text-align: center;
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
   }
@@ -530,7 +533,6 @@ main {
 /* =============================================
    HARMONISATION GLOBALE — titres, boutons, textes
    ============================================= */
-
 /* Titres */
 body main h1:not(.hero-title):not(.brand),
 body main h2:not(.brand),
