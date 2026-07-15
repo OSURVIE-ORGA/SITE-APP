@@ -1,0 +1,57 @@
+﻿/* =============================================
+   Styles extraits pour a-propos.html
+   ============================================= */
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--c-bg);
+      color: var(--c-text);
+      margin: 0;
+      padding-top: 78px;
+    }
+.gold {
+      color: var(--c-accent);
+      font-family: 'Kanit', sans-serif;
+      font-weight: 700;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 30px 40px;
+      background-color: var(--c-white);
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(172, 146, 82, 0.2);
+      line-height: 1.6;
+    }
+
+    h2 {
+      color: var(--c-accent);
+      font-family: 'Kanit', sans-serif;
+      margin-top: 30px;
+    }
+
+    .img-profil, .img-equipe {
+      width: 100%;
+      max-width: 250px;
+      border-radius: 10px;
+      margin: 20px 0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+.engagements-label {
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+
+    main ul {
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 600px) {
+      main {
+        padding: 20px;
+        margin-left: 16px;
+        margin-right: 16px;
+      }
+}
+

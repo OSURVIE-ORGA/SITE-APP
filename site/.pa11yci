@@ -1,0 +1,14 @@
+{
+    "defaults": {
+        "timeout": 10000
+    },
+    "urls": [
+        "http://localhost:3000/site/index.html",
+        "http://localhost:3000/site/pages/a-propos.html",
+        "http://localhost:3000/site/pages/planning.html",
+        "http://localhost:3000/site/pages/benevolat.html",
+        "http://localhost:3000/site/pages/mecenat.html",
+        "http://localhost:3000/site/pages/contact.html",
+        "http://localhost:3000/site/pages/dons.html"
+    ]
+}

@@ -1,0 +1,106 @@
+﻿/* =============================================
+   Styles extraits pour contact.html
+   ============================================= */
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--c-bg);
+      color: var(--c-text);
+      margin: 0;
+      padding-top: 78px;
+    }
+.gold {
+      color: var(--c-accent);
+      font-family: 'Kanit', sans-serif;
+      font-weight: 700;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 30px auto;
+      padding: 30px 40px;
+      background-color: var(--c-white);
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(172, 146, 82, 0.2);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-top: 15px;
+      font-weight: 600;
+      color: var(--c-text);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      margin-top: 5px;
+      padding: 10px;
+      border: 1px solid #d6c9b6;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-family: 'Montserrat', sans-serif;
+      resize: vertical;
+      color: var(--c-text);
+    }
+
+    textarea {
+      min-height: 120px;
+    }
+
+    form button {
+      margin-top: 25px;
+      padding: 12px;
+      background-color: var(--c-accent);
+      color: var(--c-white);
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: var(--c-accent);
+    }
+
+    .contact-info {
+      margin-top: 30px;
+      font-size: 1rem;
+      color: #6b5e3a;
+    }
+
+    .contact-info p {
+      margin-bottom: 10px;
+    }
+
+    a {
+      color: var(--c-accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+@media (max-width: 600px) {
+      main {
+        padding: 20px;
+      }
+}
+
+    #confirmationMessage {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      background-color: var(--c-accent);
+      color: white;
+      font-weight: 700;
+      text-align: center;
+    }
+

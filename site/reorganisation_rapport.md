@@ -1,0 +1,1 @@
+Réorganisation du projet : restructuration de l'arborescence des fichiers pour une meilleure lisibilité, suppression des fichiers doublons et inutiles, simplification du code en factorisant les éléments répétés, extraction du code JavaScript inline des pages HTML vers des fichiers JS externes dédiés, et suppression du code CSS non utilisé.

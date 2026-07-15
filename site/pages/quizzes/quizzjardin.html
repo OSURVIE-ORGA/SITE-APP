@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<!-- Mirrored from osurvie.fr/quizzjardin.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:40 GMT -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quiz Jardinage & Nature - O'vert demain</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0faf0;
+      color: #2f4f2f;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    a.home-link {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      text-decoration: none;
+      font-weight: 600;
+      color: #3a7d3a;
+      background: rgba(58, 125, 58, 0.1);
+      padding: 8px 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(58, 125, 58, 0.3);
+      transition: background-color 0.3s ease;
+      z-index: 20;
+    }
+    a.home-link:hover {
+      background: rgba(58, 125, 58, 0.3);
+    }
+
+    h1 {
+      color: #3a7d3a;
+      font-weight: 700;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .quiz-section {
+      max-width: 700px;
+      background: #d9edd9;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 3px 15px rgba(58, 125, 58, 0.3);
+      color: #1f3f1f;
+    }
+
+    .quiz-section h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2f6b2f;
+    }
+
+    .quiz-question p {
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .quiz-question label {
+      display: block;
+      margin-bottom: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .submit-btn {
+      display: block;
+      margin: 20px auto 0;
+      background-color: #3a7d3a;
+      color: #f0faf0;
+      border: none;
+      padding: 12px 24px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(58, 125, 58, 0.6);
+      transition: background-color 0.3s ease;
+    }
+    .submit-btn:hover, .submit-btn:focus {
+      background-color: #2f4f2f;
+      outline: none;
+    }
+
+    #quiz-result {
+      margin-top: 15px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .answers-list {
+      margin-top: 20px;
+      background: #e6f3e6;
+      border-radius: 10px;
+      padding: 15px 20px;
+      color: #2f4f2f;
+      line-height: 1.4;
+    }
+
+    .answers-list strong {
+      color: #3a7d3a;
+    }
+
+    @media (max-width: 600px) {
+      .quiz-section {
+        padding: 15px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="../actions/overtdemain.html" class="home-link" aria-label="Retour à la page O'vert demain">← Retour</a>
+
+  <h1>Quiz Jardinage & Nature</h1>
+
+  <section class="quiz-section" aria-label="Quiz simple sur le jardinage et la nature">
+    <h2>Testez ce que vous savez !</h2>
+    <form id="quiz-form">
+      <div class="quiz-question">
+        <p>1. Que font les abeilles dans le jardin ?</p>
+        <label><input type="radio" name="q1" value="a" required> a) Elles mangent les fleurs</label><br>
+        <label><input type="radio" name="q1" value="b"> b) Elles aident les fleurs à faire des fruits</label><br>
+        <label><input type="radio" name="q1" value="c"> c) Elles arrosent les plantes</label>
+      </div>
+
+      <div class="quiz-question">
+        <p>2. Que faut-il faire pour avoir beaucoup d’animaux dans le jardin ?</p>
+        <label><input type="radio" name="q2" value="a" required> a) Planter différentes fleurs et plantes</label><br>
+        <label><input type="radio" name="q2" value="b"> b) Couper toutes les plantes</label><br>
+        <label><input type="radio" name="q2" value="c"> c) Mettre des produits chimiques</label>
+      </div>
+
+      <div class="quiz-question">
+        <p>3. Pourquoi laisser des feuilles mortes au sol ?</p>
+        <label><input type="radio" name="q3" value="a" required> a) Pour faire joli</label><br>
+        <label><input type="radio" name="q3" value="b"> b) Pour aider les insectes et nourrir la terre</label><br>
+        <label><input type="radio" name="q3" value="c"> c) Pour empêcher les plantes de pousser</label>
+      </div>
+
+      <div class="quiz-question">
+        <p>4. Quel est un bon moment pour planter des légumes ?</p>
+        <label><input type="radio" name="q4" value="a" required> a) En hiver, quand il fait très froid</label><br>
+        <label><input type="radio" name="q4" value="b"> b) Au printemps, quand il fait plus chaud</label><br>
+        <label><input type="radio" name="q4" value="c"> c) En plein été, quand il fait très chaud</label>
+      </div>
+
+      <div class="quiz-question">
+        <p>5. Que faut-il faire pour aider les plantes à bien pousser ?</p>
+        <label><input type="radio" name="q5" value="a" required> a) Leur donner de l’eau régulièrement</label><br>
+        <label><input type="radio" name="q5" value="b"> b) Ne jamais les arroser</label><br>
+        <label><input type="radio" name="q5" value="c"> c) Mettre beaucoup de produits chimiques</label>
+      </div>
+
+      <div class="quiz-question">
+        <p>6. Pourquoi est-il important d’avoir des insectes dans le jardin ?</p>
+        <label><input type="radio" name="q6" value="a" required> a) Parce qu’ils mangent toutes les plantes</label><br>
+        <label><input type="radio" name="q6" value="b"> b) Parce qu’ils aident à garder le jardin en bonne santé</label><br>
+        <label><input type="radio" name="q6" value="c"> c) Parce qu’ils font du bruit</label>
+      </div>
+
+      <div class="quiz-question">
+        <p>7. Est-il bon de donner du pain aux oiseaux et aux canards ?</p>
+        <label><input type="radio" name="q7" value="a" required> a) Oui, c’est leur nourriture préférée</label><br>
+        <label><input type="radio" name="q7" value="b"> b) Non, cela peut faire du mal aux animaux et attirer les rats</label><br>
+        <label><input type="radio" name="q7" value="c"> c) Ça ne change rien</label>
+      </div>
+
+      <button type="submit" class="submit-btn">Valider mes réponses</button>
+    </form>
+
+    <div id="quiz-result" role="alert" aria-live="polite"></div>
+
+    <div id="correct-answers" class="answers-list" aria-live="polite" style="display:none;">
+      <h3>Les bonnes réponses :</h3>
+      <ul>
+        <li><strong>1.</strong> Les abeilles aident les fleurs à faire des fruits.</li>
+        <li><strong>2.</strong> Il faut planter différentes fleurs et plantes pour avoir des animaux.</li>
+        <li><strong>3.</strong> Laisser des feuilles mortes aide les insectes et nourrit la terre.</li>
+        <li><strong>4.</strong> Le printemps est un bon moment pour planter des légumes.</li>
+        <li><strong>5.</strong> Il faut donner de l’eau régulièrement aux plantes.</li>
+        <li><strong>6.</strong> Les insectes aident à garder le jardin en bonne santé.</li>
+        <li><strong>7.</strong> Il ne faut pas donner du pain aux oiseaux et canards, cela peut leur faire du mal et attirer les rats.</li>
+      </ul>
+      <p><strong>Encourageons le respect de la nature et des animaux en jardinant avec soin et attention ! 🌿🐝🌸</strong></p>
+    </div>
+
+  </section>
+
+  <script src="../../assets/js/quizzes/quizzjardin.js"></script>
+
+</body>
+
+<!-- Mirrored from osurvie.fr/quizzjardin.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:40 GMT -->
+</html>

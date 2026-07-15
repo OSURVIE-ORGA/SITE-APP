@@ -1,0 +1,215 @@
+﻿/* =============================================
+   Styles extraits pour benevolat.html
+   ============================================= */
+
+    
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--c-bg);
+      color: var(--c-text);
+      margin: 0;
+      padding-top: 78px;
+    }
+.gold {
+      color: var(--c-accent);
+      font-family: 'Kanit', sans-serif;
+      font-weight: 700;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 30px auto;
+      padding: 30px 40px;
+      background-color: var(--c-white);
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(172, 146, 82, 0.2);
+    }
+
+    p.intro {
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-top: 15px;
+      font-weight: 600;
+      color: var(--c-text);
+    }
+
+    input, select, textarea {
+      margin-top: 5px;
+      padding: 10px;
+      border: 1px solid #d6c9b6;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-family: 'Montserrat', sans-serif;
+      resize: vertical;
+      color: var(--c-text);
+    }
+
+    textarea {
+      min-height: 100px;
+    }
+
+    form button {
+      margin-top: 25px;
+      padding: 12px;
+      background-color: var(--c-accent);
+      color: var(--c-white);
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: var(--c-accent);
+    }
+
+    @media (max-width: 600px) {
+      main {
+        padding: 20px;
+      }
+}
+
+    /* =============================================
+       ACCORDÉON — style e-commerce moderne
+       ============================================= */
+    .accordion {
+      max-width: 760px;
+      margin: 0 auto 40px;
+      border-top: 1px solid rgba(106, 78, 62, 0.18);
+    }
+
+    .section-title {
+      font-family: 'Kanit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 40px 0 32px;
+      color: var(--c-text);
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+
+    .accordion-item {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(106, 78, 62, 0.18);
+      border-radius: 0;
+      margin: 0;
+      box-shadow: none;
+      overflow: hidden;
+    }
+
+    .accordion-button {
+      width: 100%;
+      padding: 22px 4px;
+      background: transparent;
+      border: none;
+      text-align: left;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.02rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--c-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: color 0.2s ease, padding-left 0.25s ease;
+    }
+
+    .accordion-button:hover {
+      color: #8E6A4A;
+      background: transparent;
+      padding-left: 8px;
+    }
+
+    /* Icône + à droite (deux barres) qui pivote en × quand ouvert */
+    .accordion-button::after {
+      content: '';
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      background-image:
+        linear-gradient(currentColor, currentColor),
+        linear-gradient(currentColor, currentColor);
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: 16px 2px, 2px 16px;
+      transition: transform 0.35s cubic-bezier(.4, 0, .2, 1);
+    }
+    .accordion-item.is-open .accordion-button::after {
+      transform: rotate(45deg);
+    }
+    /* La span .plus-vertical n'est plus utilisée mais on la masque au cas où */
+    .accordion-button .plus-vertical { display: none; }
+
+    /* Contenu : transition fluide via max-height */
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      padding: 0 4px;
+      background: transparent;
+      color: var(--c-text);
+      line-height: 1.65;
+      transition: max-height 0.45s ease, padding-bottom 0.3s ease, opacity 0.3s ease 0.1s;
+      opacity: 0;
+    }
+
+    .accordion-item.is-open .accordion-content {
+      max-height: 800px;
+      padding-bottom: 24px;
+      opacity: 1;
+    }
+
+    .accordion-content ul {
+      list-style: none;
+      padding: 0;
+      margin: 4px 0 0;
+    }
+
+    .accordion-content li {
+      padding: 7px 0 7px 22px;
+      position: relative;
+      color: var(--c-text);
+      font-size: 0.94rem;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .accordion-content li::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 16px;
+      width: 7px;
+      height: 7px;
+      background: var(--c-accent);
+      border-radius: 50%;
+    }
+
+    .accordion-content p {
+      margin: 0 0 12px;
+      color: var(--c-text);
+      font-size: 0.94rem;
+      line-height: 1.65;
+    }
+
+    .accordion-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 600px) {
+      .section-title { font-size: 1.4rem; }
+      .accordion-button { font-size: 0.95rem; padding: 18px 4px; }
+    }
+

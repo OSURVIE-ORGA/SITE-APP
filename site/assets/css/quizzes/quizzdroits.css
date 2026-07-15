@@ -1,0 +1,79 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #fff9f7;
+  color: #4b3b2b;
+  margin: 30px 20px 50px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+h1 {
+  color: #7c5337;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.question {
+  margin-bottom: 25px;
+  background: #f8f1e9;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(124, 83, 55, 0.15);
+}
+
+.question p {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button {
+  background-color: #7c5337;
+  color: #f8f1e9;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(124, 83, 55, 0.4);
+  transition: background-color 0.3s ease;
+  user-select: none;
+  display: block;
+  margin: 30px auto;
+}
+
+button:hover, button:focus {
+  background-color: #4b3b2b;
+  outline: none;
+}
+
+.results {
+  margin-top: 30px;
+  background: #f8f1e9;
+  border: 1px solid #e0d4c4;
+  padding: 20px;
+  border-radius: 8px;
+  color: #4b3b2b;
+}
+
+.results h2 {
+  margin-top: 0;
+}
+
+.encouragement {
+  margin-top: 20px;
+  font-style: italic;
+  background: #f8f1e9;
+  padding: 15px 20px;
+  border-left: 5px solid #7c5337;
+  border-radius: 6px;
+  color: #6e5843;
+}

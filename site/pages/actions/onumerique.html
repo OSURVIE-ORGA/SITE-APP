@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<!-- Mirrored from osurvie.fr/ONUMERIQUE.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:17 GMT -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>O’Numérique</title>
+
+  <meta name="description" content="Découvrez nos sorties O’Venture pour seniors, anciens travailleurs immigrés, familles monoparentales, fammilles et personnes isolées : moments d’évasion, nature, culture et liens humains." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="O’Numérique" />
+  <meta property="og:description" content="Moments d’évasion et de convivialité pour seniors, anciens travailleurs immigrés, familles monoparentales et toutes personnes en situation de précarité." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="onumerique-2.html" />
+  <meta property="og:image" content="NUMERI.html" />
+  <meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="O’Numérique" />
+  <meta name="twitter:description" content="Accompagnement des seniors vers le numérique, lutte contre l'illectronisme, des travailleurs immigrés et toutes personnes en situation de précarité." />
+  <meta name="twitter:image" content="NUMERI.html" />
+
+  <link rel="stylesheet" href="../../assets/css/global.css" />
+<link rel="stylesheet" href="../../assets/css/actions/shared-action.css" />
+  <link rel="stylesheet" href="../../assets/css/actions/onumerique.css" />
+</head>
+<body>
+<div id="site-nav-mount"></div>
+
+
+
+  <h1>O’Numérique</h1>
+
+  <!-- --- Ajout du texte d’intro, avant le carrousel --- -->
+<div class="intro-text">
+  <h2>Accompagnement découverte du numérique</h2>
+  <p>
+Découvrir et se familiariser avec le numérique pour mieux communiquer, gérer ses appareils et ses informations, 
+le tout dans une ambiance conviviale et loin du cadre scolaire.
+  </p>
+</div>
+
+<div class="description-text">
+  <p>
+        Ces séances permettent aux participants de manipuler un ordinateur à écran tactile/tablette ou un smartphone et renouver avec le numérique. 
+    Les premiers retours sont très positifs et témoignent d’un regain de confiance et d’autonomie.
+  </p>
+  <p>
+    Pour développer cet accompagnement et toucher davantage de bénéficiaires, nous recherchons des soutiens engagés à nos côtés.
+  </p>
+</div>
+
+  <!-- --- Ajout citation --- -->
+  <div class="quote">
+    “Je n'avais jamais utilisé d'ordinateur avant”<br>
+    <strong>– Un participant</strong>
+  </div>
+
+  <!-- Carrousel (images inchangées) -->
+  <div class="carousel-container" aria-label="Carrousel d’images de O’Venture">
+    <div class="carousel" id="carousel">
+      <div class="carousel-slide"><img src="../../assets/images/photos/numerique/1.jpg" alt="découverte du numérique"></div>
+      <div class="carousel-slide"><img src="../../assets/images/photos/numerique/2.jpg" alt="autour d'un café c'est plus rassurant"></div>
+          <div class="carousel-slide"><img src="../../assets/images/photos/numerique/3.jpg" alt="autour d'un café c'est plus rassurant"></div>
+
+    </div>
+    <!-- Boutons pour naviguer dans le carrousel -->
+    <button class="carousel-btn prev" aria-label="Image précédente">&#10094;</button>
+    <button class="carousel-btn next" aria-label="Image suivante">&#10095;</button>
+  </div>
+
+  <!-- Optionnel : un bouton pour rejoindre / contact (si tu veux) -->
+  <button class="join-btn" onclick="window.location.href='contact.html'">Rejoignez-nous</button>
+
+  <script>
+    // Simple script carrousel (optionnel, tu peux modifier selon ta logique)
+    const carousel = document.getElementById('carousel');
+    const slides = carousel.children;
+    let index = 0;
+
+    function showSlide(i) {
+      if (i < 0) i = slides.length - 1;
+      if (i >= slides.length) i = 0;
+      index = i;
+      carousel.style.transform = `translateX(-${index * 100}%)`;
+    }
+
+    document.querySelector('.carousel-btn.prev').addEventListener('click', () => {
+      showSlide(index - 1);
+    });
+    document.querySelector('.carousel-btn.next').addEventListener('click', () => {
+      showSlide(index + 1);
+    });
+
+    // Auto slide toutes les 6s
+    setInterval(() => {
+      showSlide(index + 1);
+    }, 6000);
+  </script>
+
+
+
+<div id="site-footer-mount"></div>
+<script src="../../assets/js/components.js"></script>
+</body>
+
+<!-- Mirrored from osurvie.fr/ONUMERIQUE.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 08 May 2026 18:13:23 GMT -->
+</html>
