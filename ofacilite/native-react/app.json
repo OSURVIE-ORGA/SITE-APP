@@ -1,23 +1,42 @@
 {
   "expo": {
-    "name": "native-react",
-    "slug": "native-react",
+    "name": "O'Facilit",
+    "slug": "ofacilite",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "nativereact",
-    "userInterfaceStyle": "automatic",
+    "scheme": "ofacilite",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSContactsUsageDescription": "L'app a besoin d'accéder à vos contacts pour passer des appels.",
+        "NSCameraUsageDescription": "L'app a besoin de la caméra pour photographier des documents.",
+        "NSPhotoLibraryUsageDescription": "L'app a besoin d'accéder à vos photos.",
+        "NSLocationWhenInUseUsageDescription": "L'app a besoin de votre position pour afficher les lieux d'aide proches.",
+        "NSSpeechRecognitionUsageDescription": "L'app utilise la reconnaissance vocale pour répondre à vos questions.",
+        "NSMicrophoneUsageDescription": "L'app a besoin du micro pour la reconnaissance vocale."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#5C3D1E",
+        "foregroundImage": "./assets/images/icon.png"
       },
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "android.permission.READ_CONTACTS",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.WRITE_CONTACTS"
+      ],
+      "package": "com.baji.keusike.ofacilite"
     },
     "web": {
       "output": "static",
@@ -25,18 +44,41 @@
     },
     "plugins": [
       "expo-router",
+      "expo-contacts",
+      "expo-location",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "L'app accède à vos photos pour les partager avec vos contacts.",
+          "cameraPermission": "L'app utilise la caméra pour photographier des documents."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ],
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#5C3D1E",
+          "image": "./assets/images/icon.png",
+          "imageWidth": 100
         }
-      ]
+      ],
+      "expo-image",
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "74689bbe-e2ad-4042-8981-22c82ad1955c"
+      }
     }
   }
 }

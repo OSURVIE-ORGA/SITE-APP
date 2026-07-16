@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Permanence O'Survie Bondy Centre",
+    "category": "O'Survie",
+    "address": "12 rue du Général Leclerc, 93140 Bondy",
+    "phone": "0148479200",
+    "latitude": 48.9031,
+    "longitude": 2.4826
+  },
+  {
+    "name": "Permanence O'Survie Bondy Nord",
+    "category": "O'Survie",
+    "address": "45 avenue du Président Wilson, 93140 Bondy",
+    "phone": "0148479201",
+    "latitude": 48.9115,
+    "longitude": 2.4781
+  },
+  {
+    "name": "CCAS de Bondy",
+    "category": "CCAS",
+    "address": "3 place de la Résistance, 93140 Bondy",
+    "phone": "0148023000",
+    "latitude": 48.9052,
+    "longitude": 2.4839
+  },
+  {
+    "name": "Mairie de Bondy",
+    "category": "Mairie",
+    "address": "1 place de la Mairie, 93140 Bondy",
+    "phone": "0148023030",
+    "latitude": 48.9040,
+    "longitude": 2.4834
+  },
+  {
+    "name": "Banque Alimentaire Seine-Saint-Denis",
+    "category": "Banque alimentaire",
+    "address": "78 rue de la Ferme, 93140 Bondy",
+    "phone": "0148476655",
+    "latitude": 48.8975,
+    "longitude": 2.4910
+  },
+  {
+    "name": "Espace Numérique Bondy",
+    "category": "Numérique",
+    "address": "22 boulevard du Général de Gaulle, 93140 Bondy",
+    "phone": "0148479500",
+    "latitude": 48.9068,
+    "longitude": 2.4755
+  }
+]
