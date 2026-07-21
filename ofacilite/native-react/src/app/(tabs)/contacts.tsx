@@ -1,7 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Contacts from "expo-contacts/legacy";
 import * as ImagePicker from "expo-image-picker";
-import * as Sharing from "expo-sharing";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,33 +7,29 @@ import {
     FlatList,
     Image,
     Linking,
+    Modal,
+    Pressable,
     StyleSheet,
     Text,
+    TextInput,
     View
 } from "react-native";
+import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
 
 import AccessibleButton from "@/components/accessible-button";
 import { AppColors, BorderRadius, BorderColor, FontSizes, MutedColor, Spacing } from "@/constants/theme";
-import { getPhotoForContact, savePhotoForContact } from "@/services/database";
+import { addContact, AppContact, deleteContact, getContacts, updateContactPhoto } from "@/services/database";
 import TtsService from "@/services/tts-service";
-
-interface ContactWithPhoto {
-  id: string;
-  name: string;
-  firstName: string;
-  initial: string;
-  phone: string;
-  photo?: string | null;
-  localPhoto?: string | null;
-}
 
 export default function ContactsScreen() {
   const { t, i18n } = useTranslation();
 
-  const [contacts, setContacts] = useState<ContactWithPhoto[]>([]);
+  const [contacts, setContacts] = useState<AppContact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-  const [canAskAgain, setCanAskAgain] = useState(true);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newPhoto, setNewPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     TtsService.instance.init(i18n.language);
@@ -49,150 +43,106 @@ export default function ContactsScreen() {
     };
   }, []);
 
-  const fetchContacts = async () => {
-    try {
-      const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Image],
-      });
-
-      const withPhone = data.filter(
-        (c) => c.phoneNumbers && c.phoneNumbers.length > 0,
-      );
-
-      const mapped: ContactWithPhoto[] = [];
-      for (const c of withPhone) {
-        const name = c.name || "?";
-        const firstName = name.split(" ")[0];
-        const initial = name[0]?.toUpperCase() || "?";
-        const phone = c.phoneNumbers![0].number || "";
-        const photo = c.image?.uri || null;
-        const localPhoto = c.id ? await getPhotoForContact(c.id) : null;
-
-        mapped.push({
-          id: c.id || String(Math.random()),
-          name,
-          firstName,
-          initial,
-          phone,
-          photo,
-          localPhoto,
-        });
-      }
-
-      setContacts(mapped);
-      setPermissionDenied(false);
-    } catch (err) {
-      console.warn("Failed to fetch contacts:", err);
-    } finally {
-      setLoading(false);
-    }
+  const loadContacts = async () => {
+    const data = await getContacts();
+    setContacts(data);
+    setLoading(false);
   };
 
-  const loadContacts = async () => {
-    const { status: initialStatus, canAskAgain: initialCanAsk } =
-      await Contacts.getPermissionsAsync();
+  const handleAddContact = async () => {
+    if (!newName.trim() || !newPhone.trim()) return;
+    const id = Date.now().toString();
+    await addContact(id, newName.trim(), newPhone.trim(), newPhoto);
+    setNewName("");
+    setNewPhone("");
+    setNewPhoto(null);
+    setShowAddDialog(false);
+    await loadContacts();
+  };
 
-    if (initialStatus === "granted") {
-      await fetchContacts();
-      return;
+  const pickPhoto = async (forNewContact = false, contactId?: string) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const uri = result.assets[0].uri;
+
+    if (forNewContact) {
+      setNewPhoto(uri);
+    } else if (contactId) {
+      await updateContactPhoto(contactId, uri);
+      await loadContacts();
     }
-
-    if (initialCanAsk) {
-      const { status: newStatus, canAskAgain: newCanAsk } =
-        await Contacts.requestPermissionsAsync();
-      setCanAskAgain(newCanAsk);
-      if (newStatus === "granted") {
-        await fetchContacts();
-        return;
-      }
-    } else {
-      setCanAskAgain(false);
-    }
-
-    setPermissionDenied(true);
-    setLoading(false);
   };
 
   const callContact = useCallback((phone: string) => {
     Linking.openURL(`tel:${phone}`);
   }, []);
 
-  const sendPhoto = useCallback(async (contact: ContactWithPhoto) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-    const isAvailable = await Sharing.isAvailableAsync();
-    if (isAvailable) {
-      await Sharing.shareAsync(result.assets[0].uri);
-    }
-  }, []);
+  const handleDeleteContact = async (contactId: string) => {
+    await deleteContact(contactId);
+    await loadContacts();
+  };
 
-  const changePhoto = useCallback(async (contact: ContactWithPhoto) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-    const uri = result.assets[0].uri;
-    await savePhotoForContact(contact.id, uri);
-    setContacts((prev) =>
-      prev.map((c) => (c.id === contact.id ? { ...c, localPhoto: uri } : c)),
-    );
-  }, []);
+  const renderDeleteAction = () => (
+    <View style={styles.deleteAction}>
+      <Ionicons name="trash" size={32} color={AppColors.white} />
+    </View>
+  );
 
   const renderContact = useCallback(
-    ({ item }: { item: ContactWithPhoto }) => {
-      const avatarUri = item.localPhoto || item.photo;
+    ({ item }: { item: AppContact }) => {
+      const avatarUri = item.photoPath;
+      const initial = item.name[0]?.toUpperCase() || "?";
 
       return (
-        <View style={styles.contactRow}>
-          <AccessibleButton
-            description={t("contacts_desc_edit_photo", {
-              name: item.firstName,
-            })}
-            onTap={() => changePhoto(item)}
-          >
-            <View>
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarInitial}>{item.initial}</Text>
+        <Swipeable
+          renderRightActions={renderDeleteAction}
+          onSwipeableOpen={(dir) => {
+            if (dir === "right") {
+              handleDeleteContact(item.id);
+            }
+          }}
+        >
+          <View style={styles.contactRow}>
+            <AccessibleButton
+              description={t("contacts_desc_edit_photo", {
+                name: item.name,
+              })}
+              onTap={() => pickPhoto(false, item.id)}
+            >
+              <View>
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Text style={styles.avatarInitial}>{initial}</Text>
+                  </View>
+                )}
+                <View style={styles.editBadge}>
+                  <Ionicons name="pencil" size={10} color="#555555" />
                 </View>
-              )}
-              <View style={styles.editBadge}>
-                <Ionicons name="pencil" size={10} color="#555555" />
               </View>
-            </View>
-          </AccessibleButton>
+            </AccessibleButton>
 
-          <Text style={styles.contactName} numberOfLines={1}>
-            {item.name}
-          </Text>
+            <Text style={styles.contactName} numberOfLines={1}>
+              {item.name}
+            </Text>
 
-          <AccessibleButton
-            description={t("contacts_desc_call", { name: item.firstName })}
-            onTap={() => callContact(item.phone)}
-          >
-            <View style={styles.callButton}>
-              <Ionicons name="call" size={18} color={AppColors.dark} />
-              <Text style={styles.callButtonText}>{t("contacts_call")}</Text>
-            </View>
-          </AccessibleButton>
-
-          <AccessibleButton
-            description={t("contacts_desc_photo", { name: item.firstName })}
-            onTap={() => sendPhoto(item)}
-          >
-            <View style={styles.photoButton}>
-              <Ionicons name="camera" size={18} color={AppColors.white} />
-              <Text style={styles.photoButtonText}>{t("contacts_photo")}</Text>
-            </View>
-          </AccessibleButton>
-        </View>
+            <AccessibleButton
+              description={t("contacts_desc_call", { name: item.name })}
+              onTap={() => callContact(item.phone)}
+            >
+              <View style={styles.callButton}>
+                <Ionicons name="call" size={18} color={AppColors.dark} />
+                <Text style={styles.callButtonText}>{t("contacts_call")}</Text>
+              </View>
+            </AccessibleButton>
+          </View>
+        </Swipeable>
       );
     },
-    [t, callContact, sendPhoto, changePhoto],
+    [t, callContact, pickPhoto],
   );
 
   if (loading) {
@@ -203,65 +153,102 @@ export default function ContactsScreen() {
     );
   }
 
-  if (permissionDenied) {
-    return (
-      <View style={styles.centerContainer}>
-        <Ionicons
-          name="people-outline"
-          size={72}
-          color={MutedColor}
-          style={{ marginBottom: Spacing.md }}
-        />
-        <Text
-          style={[
-            styles.emptyText,
-            {
-              marginBottom: Spacing.lg,
-              textAlign: "center",
-              paddingHorizontal: Spacing.md,
-            },
-          ]}
-        >
-          {t("contacts_no_permission")}
-        </Text>
-        {!canAskAgain && (
-          <AccessibleButton
-            description={t("contacts_desc_open_settings")}
-            onTap={() => Linking.openSettings()}
-          >
-            <View style={styles.openSettingsButton}>
-              <Ionicons name="settings" size={20} color={AppColors.white} />
-              <Text style={styles.openSettingsButtonText}>
-                {t("contacts_open_settings")}
-              </Text>
-            </View>
-          </AccessibleButton>
-        )}
-      </View>
-    );
-  }
-
-  if (contacts.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>{t("contacts_empty")}</Text>
-      </View>
-    );
-  }
-
   return (
-    <FlatList
-      data={contacts}
-      keyExtractor={(item) => item.id}
-      renderItem={renderContact}
-      contentContainerStyle={styles.listContent}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
-      style={{ backgroundColor: AppColors.cream }}
-    />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        {contacts.length === 0 ? (
+          <View style={styles.centerContainer}>
+            <Text style={styles.emptyText}>{t("contacts_empty")}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={contacts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderContact}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        )}
+
+        <Pressable
+          style={styles.fab}
+          onPress={() => setShowAddDialog(true)}
+          accessibilityLabel={t("contacts_add")}
+          accessibilityRole="button"
+        >
+          <Ionicons name="add" size={36} color={AppColors.dark} />
+        </Pressable>
+
+        {/* Add Contact Modal */}
+        <Modal visible={showAddDialog} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{t("contacts_add_title")}</Text>
+
+              <Pressable
+                style={styles.newPhotoContainer}
+                onPress={() => pickPhoto(true)}
+              >
+                {newPhoto ? (
+                  <Image source={{ uri: newPhoto }} style={styles.newAvatar} />
+                ) : (
+                  <View style={styles.newAvatarPlaceholder}>
+                    <Ionicons name="camera" size={32} color={AppColors.white} />
+                  </View>
+                )}
+                <Text style={styles.newPhotoText}>{t("contacts_choose_photo")}</Text>
+              </Pressable>
+
+              <Text style={styles.inputLabel}>{t("contacts_name")}</Text>
+              <TextInput
+                style={styles.input}
+                value={newName}
+                onChangeText={setNewName}
+                placeholder={t("contacts_name_placeholder")}
+                placeholderTextColor={MutedColor}
+              />
+
+              <Text style={styles.inputLabel}>{t("contacts_phone")}</Text>
+              <TextInput
+                style={styles.input}
+                value={newPhone}
+                onChangeText={setNewPhone}
+                placeholder="06..."
+                placeholderTextColor={MutedColor}
+                keyboardType="phone-pad"
+              />
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={styles.modalButtonCancel}
+                  onPress={() => setShowAddDialog(false)}
+                >
+                  <Text style={styles.modalButtonCancelText}>
+                    {t("health_cancel")}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.modalButtonSave}
+                  onPress={handleAddContact}
+                >
+                  <Text style={styles.modalButtonSaveText}>
+                    {t("health_save")}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: AppColors.cream,
+  },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -275,6 +262,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.md,
+    paddingBottom: 100, // For FAB
   },
   contactRow: {
     backgroundColor: AppColors.white,
@@ -292,6 +280,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 2,
+  },
+  deleteAction: {
+    backgroundColor: AppColors.primary,
+    justifyContent: "center",
+    alignItems: "flex-end",
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.xl,
   },
   avatar: {
     width: 64,
@@ -342,41 +338,106 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: AppColors.primary,
   },
-  photoButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: AppColors.dark,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-  },
-  photoButtonText: {
-    fontSize: FontSizes.md,
-    fontWeight: "600",
-    color: AppColors.white,
-  },
   separator: {
     height: 0,
     marginVertical: 0,
   },
-  openSettingsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  fab: {
+    position: "absolute",
+    bottom: Spacing.xl,
+    right: Spacing.xl,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: AppColors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-    shadowColor: AppColors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: AppColors.dark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 5,
   },
-  openSettingsButtonText: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: Spacing.xl,
+  },
+  modalContent: {
+    backgroundColor: AppColors.cream,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    gap: Spacing.md,
+  },
+  modalTitle: {
+    fontSize: FontSizes.xxl,
+    fontWeight: "bold",
+    color: AppColors.text,
+    marginBottom: Spacing.sm,
+  },
+  newPhotoContainer: {
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  newAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  newAvatarPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: MutedColor,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  newPhotoText: {
+    fontSize: FontSizes.md,
+    color: AppColors.primary,
+    fontWeight: "600",
+  },
+  inputLabel: {
     fontSize: FontSizes.lg,
-    fontWeight: "700",
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  input: {
+    backgroundColor: AppColors.white,
+    borderWidth: 1,
+    borderColor: BorderColor,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    fontSize: FontSizes.lg,
+    color: AppColors.text,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  modalButtonCancel: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md,
+  },
+  modalButtonCancelText: {
+    fontSize: FontSizes.lg,
+    color: MutedColor,
+    fontWeight: "600",
+  },
+  modalButtonSave: {
+    backgroundColor: AppColors.primary,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md,
+  },
+  modalButtonSaveText: {
+    fontSize: FontSizes.lg,
     color: AppColors.white,
+    fontWeight: "bold",
   },
 });

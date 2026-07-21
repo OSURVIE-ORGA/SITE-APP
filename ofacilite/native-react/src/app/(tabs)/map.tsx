@@ -164,13 +164,24 @@ export default function MapScreen() {
       }
     }
 
+    function categoryEmoji(category) {
+      switch (category) {
+        case "O'Survie": return '🤝';
+        case 'CCAS': return '👥';
+        case 'Mairie': return '🏛️';
+        case 'Banque alimentaire': return '🍎';
+        case 'Numérique': return '💻';
+        default: return '📍';
+      }
+    }
+
     places.forEach((place, index) => {
       const marker = L.marker([place.latitude, place.longitude], {
         icon: L.divIcon({
           className: '',
           html: '<div class="marker-wrap">' +
             '<div class="marker-label">' + place.name + '</div>' +
-            '<div class="marker-pin" style="background:' + categoryColor(place.category) + '">•</div>' +
+            '<div class="marker-pin" style="background:' + categoryColor(place.category) + '">' + categoryEmoji(place.category) + '</div>' +
           '</div>',
           iconSize: [140, 76],
           iconAnchor: [70, 76],

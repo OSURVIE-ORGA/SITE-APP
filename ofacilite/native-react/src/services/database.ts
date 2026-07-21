@@ -27,9 +27,11 @@ export interface Appointment {
   notificationId: string;
 }
 
-export interface ContactPhoto {
-  contactId: string;
-  photoPath: string;
+export interface AppContact {
+  id: string;
+  name: string;
+  phone: string;
+  photoPath: string | null;
 }
 
 let db: SQLite.SQLiteDatabase | null = null;
@@ -39,9 +41,11 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
   db = await SQLite.openDatabaseAsync('ofacilite_db');
 
   await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS contact_photos (
-      contact_id TEXT PRIMARY KEY,
-      photo_path TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS contacts (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      photo_path TEXT
     );
     CREATE TABLE IF NOT EXISTS medications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,23 +72,34 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
   return db;
 }
 
-// ── Contact Photos ────────────────────────────────────────────────────────────
+// ── Contacts ──────────────────────────────────────────────────────────────────
 
-export async function getPhotoForContact(contactId: string): Promise<string | null> {
+export async function getContacts(): Promise<AppContact[]> {
   const database = await getDb();
-  const result = await database.getFirstAsync<{ photo_path: string }>(
-    'SELECT photo_path FROM contact_photos WHERE contact_id = ?',
-    [contactId],
+  return database.getAllAsync<AppContact>(
+    'SELECT id, name, phone, photo_path as photoPath FROM contacts'
   );
-  return result?.photo_path ?? null;
 }
 
-export async function savePhotoForContact(contactId: string, photoPath: string): Promise<void> {
+export async function addContact(id: string, name: string, phone: string, photoPath: string | null): Promise<void> {
   const database = await getDb();
   await database.runAsync(
-    'INSERT OR REPLACE INTO contact_photos (contact_id, photo_path) VALUES (?, ?)',
-    [contactId, photoPath],
+    'INSERT INTO contacts (id, name, phone, photo_path) VALUES (?, ?, ?, ?)',
+    [id, name, phone, photoPath],
   );
+}
+
+export async function updateContactPhoto(id: string, photoPath: string): Promise<void> {
+  const database = await getDb();
+  await database.runAsync(
+    'UPDATE contacts SET photo_path = ? WHERE id = ?',
+    [photoPath, id],
+  );
+}
+
+export async function deleteContact(id: string): Promise<void> {
+  const database = await getDb();
+  await database.runAsync('DELETE FROM contacts WHERE id = ?', [id]);
 }
 
 // ── Medications ───────────────────────────────────────────────────────────────
