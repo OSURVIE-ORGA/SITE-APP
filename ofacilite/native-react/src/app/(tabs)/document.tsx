@@ -15,6 +15,7 @@ import AccessibleButton from "@/components/accessible-button";
 import { AppColors, BorderRadius, BorderColor, FontSizes, MutedColor, Spacing } from "@/constants/theme";
 import ApiService from "@/services/api-service";
 import TtsService from "@/services/tts-service";
+import { useAutoTTS } from "@/hooks/useAutoTTS";
 
 export default function DocumentScreen() {
   const { t, i18n } = useTranslation();
@@ -27,16 +28,7 @@ export default function DocumentScreen() {
   const [summaryFailed, setSummaryFailed] = useState(false);
   const [dotCount, setDotCount] = useState(1);
 
-  useEffect(() => {
-    TtsService.instance.init(i18n.language);
-    const timer = setTimeout(() => {
-      TtsService.instance.speak(t("document_tts_intro"));
-    }, 800);
-    return () => {
-      clearTimeout(timer);
-      TtsService.instance.stop();
-    };
-  }, []);
+  useAutoTTS("document_tts_intro");
 
   // Dots animation for loading
   useEffect(() => {

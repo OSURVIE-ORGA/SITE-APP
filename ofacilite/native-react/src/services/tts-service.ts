@@ -24,6 +24,9 @@ class TtsService {
       case 'en':
         this._language = 'en-US';
         break;
+      case 'ta':
+        this._language = 'ta-IN';
+        break;
       default:
         this._language = 'fr-FR';
     }

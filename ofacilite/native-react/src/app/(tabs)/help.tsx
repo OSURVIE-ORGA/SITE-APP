@@ -16,6 +16,7 @@ import AccessibleButton from "@/components/accessible-button";
 import { AppColors, BorderRadius, BorderColor, FontSizes, MutedColor, Spacing } from "@/constants/theme";
 import ApiService from "@/services/api-service";
 import TtsService from "@/services/tts-service";
+import { useAutoTTS } from "@/hooks/useAutoTTS";
 
 function getEmergencyIcon(type: "samu" | "police" | "fire") {
   switch (type) {
@@ -36,16 +37,7 @@ export default function HelpScreen() {
   const [isAsking, setIsAsking] = useState(false);
   const [answerFailed, setAnswerFailed] = useState(false);
 
-  useEffect(() => {
-    TtsService.instance.init(i18n.language);
-    const timer = setTimeout(() => {
-      TtsService.instance.speak(t("help_tts_intro"));
-    }, 800);
-    return () => {
-      clearTimeout(timer);
-      TtsService.instance.stop();
-    };
-  }, []);
+  useAutoTTS("help_tts_intro");
 
   const callNumber = useCallback((number: string) => {
     Linking.openURL(`tel:${number}`);

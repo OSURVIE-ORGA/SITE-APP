@@ -37,6 +37,7 @@ import {
 } from "@/services/database";
 import NotificationService from "@/services/notification-service";
 import TtsService from "@/services/tts-service";
+import { useAutoTTS } from "@/hooks/useAutoTTS";
 
 type TabName = "medications" | "appointments";
 
@@ -67,16 +68,10 @@ export default function HealthScreen() {
   const [showApptDatePicker, setShowApptDatePicker] = useState(false);
   const [showApptTimePicker, setShowApptTimePicker] = useState(false);
 
+  useAutoTTS("health_tts_intro");
+
   useEffect(() => {
-    TtsService.instance.init(i18n.language);
-    const timer = setTimeout(() => {
-      TtsService.instance.speak(t("health_tts_intro"));
-    }, 800);
     loadData();
-    return () => {
-      clearTimeout(timer);
-      TtsService.instance.stop();
-    };
   }, []);
 
   const loadData = async () => {

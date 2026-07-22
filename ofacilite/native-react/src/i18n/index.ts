@@ -6,6 +6,7 @@ import ar from './ar.json';
 import wo from './wo.json';
 import bm from './bm.json';
 import bn from './bn.json';
+import ta from './ta.json';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
@@ -14,6 +15,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'wo', label: 'Wolof', flag: '🇸🇳' },
   { code: 'bm', label: 'Bamanankan', flag: '🇲🇱' },
   { code: 'bn', label: 'বাংলা', flag: '🇧🇩' },
+  { code: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
 ] as const;
 
 i18next.use(initReactI18next).init({
@@ -24,6 +26,7 @@ i18next.use(initReactI18next).init({
     wo: { translation: wo },
     bm: { translation: bm },
     bn: { translation: bn },
+    ta: { translation: ta },
   },
   lng: 'fr',
   fallbackLng: 'fr',

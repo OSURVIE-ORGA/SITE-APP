@@ -20,6 +20,7 @@ import AccessibleButton from "@/components/accessible-button";
 import { AppColors, BorderRadius, BorderColor, FontSizes, MutedColor, Spacing } from "@/constants/theme";
 import { addContact, AppContact, deleteContact, getContacts, updateContactPhoto } from "@/services/database";
 import TtsService from "@/services/tts-service";
+import { useAutoTTS } from "@/hooks/useAutoTTS";
 
 export default function ContactsScreen() {
   const { t, i18n } = useTranslation();
@@ -31,16 +32,10 @@ export default function ContactsScreen() {
   const [newPhone, setNewPhone] = useState("");
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
 
+  useAutoTTS("contacts_tts_intro");
+
   useEffect(() => {
-    TtsService.instance.init(i18n.language);
-    const timer = setTimeout(() => {
-      TtsService.instance.speak(t("contacts_tts_intro"));
-    }, 800);
     loadContacts();
-    return () => {
-      clearTimeout(timer);
-      TtsService.instance.stop();
-    };
   }, []);
 
   const loadContacts = async () => {

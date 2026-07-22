@@ -9,6 +9,7 @@ import BigButton from "@/components/big-button";
 import LanguageSheet from "@/components/language-sheet";
 import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
 import TtsService from "@/services/tts-service";
+import { useAutoTTS } from "@/hooks/useAutoTTS";
 
 const DISCOVERY_KEYS = [
   "home_desc_document",
@@ -29,17 +30,7 @@ export default function HomeScreen() {
 
   const discoveryCancelled = useRef(false);
 
-  // Init TTS + welcome speech
-  useEffect(() => {
-    TtsService.instance.init(i18n.language);
-    const timer = setTimeout(() => {
-      TtsService.instance.speak(t("home_question"));
-    }, 800);
-    return () => {
-      clearTimeout(timer);
-      TtsService.instance.stop();
-    };
-  }, []);
+  useAutoTTS("home_question");
 
   // Discovery mode — visite guidée avec highlight glissant
   const startDiscovery = useCallback(async () => {

@@ -15,6 +15,7 @@ import AccessibleButton from "@/components/accessible-button";
 import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
 import placesData from "@/data/places.json";
 import TtsService from "@/services/tts-service";
+import { useAutoTTS } from "@/hooks/useAutoTTS";
 
 interface Place {
   name: string;
@@ -67,16 +68,7 @@ export default function MapScreen() {
   const [places] = useState<Place[]>(placesData as Place[]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
-  useEffect(() => {
-    TtsService.instance.init(i18n.language);
-    const timer = setTimeout(() => {
-      TtsService.instance.speak(t("map_tts_intro"));
-    }, 800);
-    return () => {
-      clearTimeout(timer);
-      TtsService.instance.stop();
-    };
-  }, []);
+  useAutoTTS("map_tts_intro");
 
   const showPlaceSheet = (place: Place) => {
     TtsService.instance.stop();
