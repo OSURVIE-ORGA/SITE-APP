@@ -99,41 +99,41 @@ export default function ContactsScreen() {
             }
           }}
         >
-          <View style={styles.contactRow}>
-            <AccessibleButton
-              description={t("contacts_desc_edit_photo", {
-                name: item.name,
-              })}
-              onTap={() => pickPhoto(false, item.id)}
-            >
-              <View>
-                {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarInitial}>{initial}</Text>
+          <AccessibleButton
+            description={t("contacts_desc_call", { name: item.name })}
+            onTap={() => callContact(item.phone)}
+          >
+            <View style={styles.contactRow}>
+              <AccessibleButton
+                description={t("contacts_desc_edit_photo", {
+                  name: item.name,
+                })}
+                onTap={() => pickPhoto(false, item.id)}
+              >
+                <View>
+                  {avatarUri ? (
+                    <Image source={{ uri: avatarUri }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Text style={styles.avatarInitial}>{initial}</Text>
+                    </View>
+                  )}
+                  <View style={styles.editBadge}>
+                    <Ionicons name="pencil" size={10} color="#555555" />
                   </View>
-                )}
-                <View style={styles.editBadge}>
-                  <Ionicons name="pencil" size={10} color="#555555" />
                 </View>
-              </View>
-            </AccessibleButton>
+              </AccessibleButton>
 
-            <Text style={styles.contactName} numberOfLines={1}>
-              {item.name}
-            </Text>
+              <Text style={styles.contactName} numberOfLines={1}>
+                {item.name}
+              </Text>
 
-            <AccessibleButton
-              description={t("contacts_desc_call", { name: item.name })}
-              onTap={() => callContact(item.phone)}
-            >
               <View style={styles.callButton}>
                 <Ionicons name="call" size={18} color={AppColors.dark} />
                 <Text style={styles.callButtonText}>{t("contacts_call")}</Text>
               </View>
-            </AccessibleButton>
-          </View>
+            </View>
+          </AccessibleButton>
         </Swipeable>
       );
     },
