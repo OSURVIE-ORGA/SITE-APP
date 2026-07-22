@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Contacts from "expo-contacts/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,6 +32,8 @@ export default function ContactsScreen() {
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [phoneContacts, setPhoneContacts] = useState<Contacts.ExistingContact[]>([]);
 
   useAutoTTS("contacts_tts_intro");
 
@@ -42,6 +45,33 @@ export default function ContactsScreen() {
     const data = await getContacts();
     setContacts(data);
     setLoading(false);
+  };
+
+  const handleImportFromPhone = async () => {
+    const { status } = await Contacts.requestPermissionsAsync();
+    if (status === "granted") {
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.PhoneNumbers],
+      });
+      if (data.length > 0) {
+        setPhoneContacts(
+          data
+            .filter((c) => c.name && c.phoneNumbers && c.phoneNumbers.length > 0)
+            .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+        );
+        setShowImportDialog(true);
+      }
+    } else {
+      alert(t("contacts_no_permission"));
+    }
+  };
+
+  const selectPhoneContact = (contact: Contacts.ExistingContact) => {
+    setNewName(contact.name || "");
+    if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+      setNewPhone(contact.phoneNumbers[0].number || "");
+    }
+    setShowImportDialog(false);
   };
 
   const handleAddContact = async () => {
@@ -181,6 +211,14 @@ export default function ContactsScreen() {
               <Text style={styles.modalTitle}>{t("contacts_add_title")}</Text>
 
               <Pressable
+                style={styles.importButton}
+                onPress={handleImportFromPhone}
+              >
+                <Ionicons name="download" size={24} color={AppColors.white} />
+                <Text style={styles.importButtonText}>{t("contacts_import")}</Text>
+              </Pressable>
+
+              <Pressable
                 style={styles.newPhotoContainer}
                 onPress={() => pickPhoto(true)}
               >
@@ -231,6 +269,39 @@ export default function ContactsScreen() {
                   </Text>
                 </Pressable>
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Import from Phone Modal */}
+        <Modal visible={showImportDialog} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { flex: 0.8 }]}>
+              <Text style={styles.modalTitle}>{t("contacts_select_import")}</Text>
+              <FlatList
+                data={phoneContacts}
+                keyExtractor={(item) => item.id || Math.random().toString()}
+                renderItem={({ item }) => (
+                  <Pressable
+                    style={styles.phoneContactRow}
+                    onPress={() => selectPhoneContact(item)}
+                  >
+                    <Text style={styles.phoneContactName}>{item.name}</Text>
+                    <Text style={styles.phoneContactNumber}>
+                      {item.phoneNumbers?.[0]?.number}
+                    </Text>
+                  </Pressable>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+              />
+              <Pressable
+                style={[styles.modalButtonCancel, { alignSelf: "flex-end", marginTop: Spacing.md }]}
+                onPress={() => setShowImportDialog(false)}
+              >
+                <Text style={styles.modalButtonCancelText}>
+                  {t("health_cancel")}
+                </Text>
+              </Pressable>
             </View>
           </View>
         </Modal>
@@ -434,5 +505,35 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     color: AppColors.white,
     fontWeight: "bold",
+  },
+  importButton: {
+    backgroundColor: AppColors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  importButtonText: {
+    fontSize: FontSizes.lg,
+    color: AppColors.white,
+    fontWeight: "bold",
+  },
+  phoneContactRow: {
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: BorderColor,
+  },
+  phoneContactName: {
+    fontSize: FontSizes.lg,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  phoneContactNumber: {
+    fontSize: FontSizes.md,
+    color: MutedColor,
+    marginTop: 4,
   },
 });

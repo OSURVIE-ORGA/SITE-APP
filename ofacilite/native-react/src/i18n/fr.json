@@ -30,6 +30,8 @@
   "contacts_name": "Nom",
   "contacts_name_placeholder": "Nom du contact",
   "contacts_phone": "Numéro de téléphone",
+  "contacts_import": "Importer depuis le téléphone",
+  "contacts_select_import": "Sélectionner un contact",
   "document_title": "Document",
   "document_tts": "Document",
   "document_tts_intro": "Bonjour et bienvenue sur la page Document. Ici, vous pouvez prendre en photo une lettre ou une ordonnance. Je me ferai un plaisir de la lire et de vous l'expliquer clairement.",
