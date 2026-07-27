@@ -101,5 +101,8 @@
   "map_tts_intro": "Bonjour et bienvenue sur la page Carte. Ici, vous pouvez découvrir les lieux d'aide et de solidarité près de chez vous, et je peux vous guider pour vous y rendre avec le GPS.",
   "map_call": "Appeler",
   "map_directions": "Aller avec le GPS",
-  "map_desc_directions": "Itinéraire pour aller à {{name}}."
+  "map_desc_directions": "Itinéraire pour aller à {{name}}.",
+  "contacts_desc_scan": "Scanner avec l'appareil photo",
+  "contacts_desc_add_contact": "Ajouter un contact",
+  "health_desc_scan": "Scanner avec l'appareil photo"
 }

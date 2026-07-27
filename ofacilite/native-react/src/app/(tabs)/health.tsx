@@ -82,6 +82,35 @@ export default function HealthScreen() {
     setLoading(false);
   };
 
+  // ── Scanner ──────────────────────────────────────────────────────
+
+  const takePhotoAndScan = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      alert(t("health_no_permission", "Permission d'accès à la caméra refusée"));
+      return;
+    }
+    
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+    });
+    
+    if (result.canceled || !result.assets?.[0]) return;
+    const uri = result.assets[0].uri;
+    
+    if (activeTab === "medications") {
+      setMedPhoto(uri);
+      setMedName("");
+      setMedTimes([{ hour: 8, minute: 0 }]);
+      setShowMedDialog(true);
+    } else {
+      setApptReason("");
+      setApptDoctor("");
+      setApptDate(new Date());
+      setShowApptDialog(true);
+    }
+  };
+
   // ── Medications ──────────────────────────────────────────────────
 
   const handleAddMedication = async () => {
@@ -391,6 +420,15 @@ export default function HealthScreen() {
 
         {/* FAB */}
         <View style={styles.fabContainer}>
+          <AccessibleButton
+            description={t("health_desc_scan")}
+            onTap={takePhotoAndScan}
+          >
+            <View style={styles.scanFab}>
+              <Ionicons name="scan" size={28} color={AppColors.white} />
+            </View>
+          </AccessibleButton>
+
           <AccessibleButton
             description={
               activeTab === "medications"
@@ -879,11 +917,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: Spacing.xxl,
     right: Spacing.xxl,
-    elevation: 6,
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  scanFab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: AppColors.dark,
+    justifyContent: "center",
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
+    elevation: 6,
   },
   fab: {
     width: 64,
@@ -892,6 +940,11 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.primary,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
   // Dialog styles
   dialogBackdrop: {

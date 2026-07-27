@@ -100,6 +100,27 @@ export default function ContactsScreen() {
     }
   };
 
+  const takePhotoAndScan = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      alert(t("contacts_no_permission", "Permission d'accès à la caméra refusée"));
+      return;
+    }
+    
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+    });
+    
+    if (result.canceled || !result.assets?.[0]) return;
+    const uri = result.assets[0].uri;
+    
+    // Simulate AI processing by directly opening the Add Contact modal with the photo
+    setNewPhoto(uri);
+    setNewName("");
+    setNewPhone("");
+    setShowAddDialog(true);
+  };
+
   const callContact = useCallback((phone: string) => {
     Linking.openURL(`tel:${phone}`);
   }, []);
@@ -195,14 +216,25 @@ export default function ContactsScreen() {
           />
         )}
 
-        <Pressable
-          style={styles.fab}
-          onPress={() => setShowAddDialog(true)}
-          accessibilityLabel={t("contacts_add")}
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={36} color={AppColors.dark} />
-        </Pressable>
+        <View style={styles.fabContainer}>
+          <AccessibleButton
+            description={t("contacts_desc_scan")}
+            onTap={takePhotoAndScan}
+          >
+            <View style={styles.scanFab}>
+              <Ionicons name="scan" size={28} color={AppColors.white} />
+            </View>
+          </AccessibleButton>
+
+          <AccessibleButton
+            description={t("contacts_desc_add_contact")}
+            onTap={() => setShowAddDialog(true)}
+          >
+            <View style={styles.fab}>
+              <Ionicons name="add" size={36} color={AppColors.dark} />
+            </View>
+          </AccessibleButton>
+        </View>
 
         {/* Add Contact Modal */}
         <Modal visible={showAddDialog} transparent animationType="fade">
@@ -408,10 +440,27 @@ const styles = StyleSheet.create({
     height: 0,
     marginVertical: 0,
   },
-  fab: {
+  fabContainer: {
     position: "absolute",
     bottom: Spacing.xl,
     right: Spacing.xl,
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  scanFab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: AppColors.dark,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: AppColors.dark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  fab: {
     width: 64,
     height: 64,
     borderRadius: 32,

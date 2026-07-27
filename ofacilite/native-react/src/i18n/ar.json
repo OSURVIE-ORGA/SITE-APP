@@ -99,5 +99,8 @@
   "map_tts_intro": "مرحباً بك في صفحة الخريطة. هنا، يمكنك اكتشاف أماكن المساعدة القريبة منك، ويمكنني إرشادك للوصول إليها باستخدام نظام تحديد المواقع.",
   "map_call": "اتصال",
   "map_directions": "الذهاب باستخدام GPS",
-  "map_desc_directions": "الاتجاهات للذهاب إلى {{name}}."
+  "map_desc_directions": "الاتجاهات للذهاب إلى {{name}}.",
+  "contacts_desc_scan": "مسح بالكاميرا",
+  "contacts_desc_add_contact": "إضافة جهة اتصال",
+  "health_desc_scan": "مسح بالكاميرا"
 }

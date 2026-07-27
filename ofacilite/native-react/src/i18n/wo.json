@@ -99,5 +99,8 @@
   "map_tts_intro": "Nuyu naa la, dalal jamm ci xëtu Kàrt bi. Fi, mën nga seet bërëb yi lay dimbali ci sa wet, te mën naa la jité ngir nga dem fa ak GPS.",
   "map_call": "Woté",
   "map_directions": "Dem ak GPS",
-  "map_desc_directions": "Yoon ngir dem {{name}}."
+  "map_desc_directions": "Yoon ngir dem {{name}}.",
+  "contacts_desc_scan": "Scan ak kamera bi",
+  "contacts_desc_add_contact": "Yok contact",
+  "health_desc_scan": "Scan ak kamera bi"
 }

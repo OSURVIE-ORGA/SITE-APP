@@ -99,5 +99,8 @@
   "map_tts_intro": "I ni cɛ, aw bisimila karti nyɛ kan. Yan, i bɛ se ka dɛmɛ yɔrɔw ɲini i gɛrɛfɛ, ani ne bɛ se k'i ɲɛminɛ ka taa yen ni GPS ye.",
   "map_call": "Weleli",
   "map_directions": "Taga ni GPS ye",
-  "map_desc_directions": "Sira k'a taa {{name}} ma."
+  "map_desc_directions": "Sira k'a taa {{name}} ma.",
+  "contacts_desc_scan": "Sikan kɛ ni kameray ye",
+  "contacts_desc_add_contact": "Kontaki d'a kan",
+  "health_desc_scan": "Sikan kɛ ni kameray ye"
 }

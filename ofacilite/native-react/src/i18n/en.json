@@ -99,5 +99,8 @@
   "map_tts_intro": "Hello and welcome to the Map page. Here, you can discover help and support locations near you, and I can guide you there with the GPS.",
   "map_call": "Call",
   "map_directions": "Go with GPS",
-  "map_desc_directions": "Directions to go to {{name}}."
+  "map_desc_directions": "Directions to go to {{name}}.",
+  "contacts_desc_scan": "Scan with camera",
+  "contacts_desc_add_contact": "Add a contact",
+  "health_desc_scan": "Scan with camera"
 }
