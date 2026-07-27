@@ -70,7 +70,6 @@ class NotificationService {
             {
               name: "Médicaments",
               importance: notifications.AndroidImportance.HIGH,
-              sound: "default",
             },
           );
           await notifications.setNotificationChannelAsync(
@@ -78,7 +77,6 @@ class NotificationService {
             {
               name: "Rendez-vous",
               importance: notifications.AndroidImportance.HIGH,
-              sound: "default",
             },
           );
         }
@@ -126,7 +124,7 @@ class NotificationService {
       content: {
         title,
         body,
-        sound: "default",
+        sound: true,
         priority: notifications.AndroidNotificationPriority.HIGH,
         data: { type: "medication", name: body },
         ...(Platform.OS === "android" && { channelId: "medication_channel" }),
@@ -153,7 +151,7 @@ class NotificationService {
       content: {
         title,
         body,
-        sound: "default",
+        sound: true,
         priority: notifications.AndroidNotificationPriority.HIGH,
         data: { type: "appointment", body },
         ...(Platform.OS === "android" && { channelId: "appointment_channel" }),

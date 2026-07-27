@@ -5,7 +5,8 @@
     "address": "12 rue du Général Leclerc, 93140 Bondy",
     "phone": "0148479200",
     "latitude": 48.9031,
-    "longitude": 2.4826
+    "longitude": 2.4826,
+    "image": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300"
   },
   {
     "name": "Permanence O'Survie Bondy Nord",
@@ -13,7 +14,8 @@
     "address": "45 avenue du Président Wilson, 93140 Bondy",
     "phone": "0148479201",
     "latitude": 48.9115,
-    "longitude": 2.4781
+    "longitude": 2.4781,
+    "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=400&h=300"
   },
   {
     "name": "CCAS de Bondy",
@@ -21,7 +23,8 @@
     "address": "3 place de la Résistance, 93140 Bondy",
     "phone": "0148023000",
     "latitude": 48.9052,
-    "longitude": 2.4839
+    "longitude": 2.4839,
+    "image": "https://images.unsplash.com/photo-1577415124269-311110d96e0b?auto=format&fit=crop&q=80&w=400&h=300"
   },
   {
     "name": "Mairie de Bondy",
@@ -29,7 +32,8 @@
     "address": "1 place de la Mairie, 93140 Bondy",
     "phone": "0148023030",
     "latitude": 48.9040,
-    "longitude": 2.4834
+    "longitude": 2.4834,
+    "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=400&h=300"
   },
   {
     "name": "Banque Alimentaire Seine-Saint-Denis",
@@ -37,7 +41,8 @@
     "address": "78 rue de la Ferme, 93140 Bondy",
     "phone": "0148476655",
     "latitude": 48.8975,
-    "longitude": 2.4910
+    "longitude": 2.4910,
+    "image": "https://images.unsplash.com/photo-1593113592332-ceca23bc650e?auto=format&fit=crop&q=80&w=400&h=300"
   },
   {
     "name": "Espace Numérique Bondy",
@@ -45,6 +50,7 @@
     "address": "22 boulevard du Général de Gaulle, 93140 Bondy",
     "phone": "0148479500",
     "latitude": 48.9068,
-    "longitude": 2.4755
+    "longitude": 2.4755,
+    "image": "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&q=80&w=400&h=300"
   }
 ]

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
 } from "react-native";
 import { WebView } from "react-native-webview";
 
@@ -24,6 +25,7 @@ interface Place {
   phone: string;
   latitude: number;
   longitude: number;
+  image?: string;
 }
 
 function categoryColor(category: string): string {
@@ -173,7 +175,12 @@ export default function MapScreen() {
           className: '',
           html: '<div class="marker-wrap">' +
             '<div class="marker-label">' + place.name + '</div>' +
-            '<div class="marker-pin" style="background:' + categoryColor(place.category) + '">' + categoryEmoji(place.category) + '</div>' +
+            '<div class="marker-pin" style="' +
+              (place.image
+                ? 'background-image: url(' + place.image + '); background-size: cover; background-position: center;'
+                : 'background-color:' + categoryColor(place.category) + ';'
+              ) +
+            '">' + (place.image ? '' : categoryEmoji(place.category)) + '</div>' +
           '</div>',
           iconSize: [140, 76],
           iconAnchor: [70, 76],
@@ -233,6 +240,13 @@ export default function MapScreen() {
           <View style={styles.sheet}>
             {selectedPlace && (
               <>
+                {selectedPlace.image && (
+                  <Image
+                    source={{ uri: selectedPlace.image }}
+                    style={styles.placeImageModal}
+                    resizeMode="cover"
+                  />
+                )}
                 <View style={styles.sheetHeader}>
                   <View
                     style={[
@@ -339,6 +353,12 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.xxxl,
     gap: Spacing.md,
+  },
+  placeImageModal: {
+    width: "100%",
+    height: 180,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
   },
   sheetHeader: {
     flexDirection: "row",
