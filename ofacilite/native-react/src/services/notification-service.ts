@@ -70,6 +70,7 @@ class NotificationService {
             {
               name: "Médicaments",
               importance: notifications.AndroidImportance.HIGH,
+              sound: "alert.wav",
             },
           );
           await notifications.setNotificationChannelAsync(
@@ -124,7 +125,7 @@ class NotificationService {
       content: {
         title,
         body,
-        sound: true,
+        sound: "alert.wav",
         priority: notifications.AndroidNotificationPriority.HIGH,
         data: { type: "medication", name: body },
         ...(Platform.OS === "android" && { channelId: "medication_channel" }),
