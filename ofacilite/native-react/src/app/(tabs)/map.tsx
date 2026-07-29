@@ -11,6 +11,7 @@ import {
   Image,
 } from "react-native";
 import { WebView } from "react-native-webview";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AccessibleButton from "@/components/accessible-button";
 import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
@@ -66,6 +67,7 @@ const BONDY = { latitude: 48.9031, longitude: 2.4831 };
 
 export default function MapScreen() {
   const { t, i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [places] = useState<Place[]>(placesData as Place[]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -237,7 +239,7 @@ export default function MapScreen() {
           style={styles.sheetBackdrop}
           onPress={() => setSelectedPlace(null)}
         >
-          <View style={styles.sheet}>
+          <Pressable style={[styles.sheet, { paddingBottom: Math.max(insets.bottom + Spacing.xl, Spacing.xxxl) }]} onPress={(e) => e.stopPropagation()}>
             {selectedPlace && (
               <>
                 {selectedPlace.image && (
@@ -308,7 +310,7 @@ export default function MapScreen() {
                     name: selectedPlace.name,
                   })}
                   onTap={() => {
-                    const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedPlace.latitude},${selectedPlace.longitude}`;
+                    const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedPlace.latitude},${selectedPlace.longitude}&travelmode=walking`;
                     Linking.openURL(url);
                   }}
                 >
@@ -325,7 +327,7 @@ export default function MapScreen() {
                 </AccessibleButton>
               </>
             )}
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
