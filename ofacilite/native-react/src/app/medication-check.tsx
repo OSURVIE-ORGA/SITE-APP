@@ -4,15 +4,18 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
 import TtsService from "@/services/tts-service";
+import { useTranslation } from "react-i18next";
+import { getMedicationsWithTimes } from "@/services/database";
 
 export default function MedicationCheckScreen() {
   const router = useRouter();
   const { name } = useLocalSearchParams<{ name: string }>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Play voice prompt
-    TtsService.instance.speak(`Il est l'heure de prendre votre médicament : ${name || "votre traitement"}. L'avez-vous pris ?`);
-  }, [name]);
+    TtsService.instance.speak(t("notif_med_tts", { name: name || t("health_tab_medications") }));
+  }, [name, t]);
 
   return (
     <View style={styles.container}>
@@ -29,8 +32,28 @@ export default function MedicationCheckScreen() {
       <View style={styles.actions}>
         <Pressable 
           style={[styles.button, styles.btnYes]} 
-          onPress={() => {
+          onPress={async () => {
             TtsService.instance.stop();
+            
+            if (name) {
+              try {
+                const meds = await getMedicationsWithTimes();
+                const med = meds.find(m => m.medication.name === name);
+                if (med && med.medication.startDate && med.medication.durationDays) {
+                  const start = new Date(med.medication.startDate);
+                  start.setHours(0, 0, 0, 0);
+                  const end = new Date(start.getTime() + med.medication.durationDays * 24 * 60 * 60 * 1000);
+                  const now = new Date();
+                  now.setHours(0, 0, 0, 0);
+                  const diffTime = end.getTime() - now.getTime();
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  if (diffDays >= 0) {
+                    await TtsService.instance.speak(t("health_med_remaining", { days: diffDays }));
+                  }
+                }
+              } catch (e) {}
+            }
+            
             router.back();
           }}
         >

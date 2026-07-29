@@ -66,11 +66,11 @@ class NotificationService {
       try {
         if (Platform.OS === "android") {
           await notifications.setNotificationChannelAsync(
-            "medication_channel",
+            "medication_channel_v4",
             {
               name: "Médicaments",
               importance: notifications.AndroidImportance.HIGH,
-              sound: "alert.wav",
+              sound: "alert.mp3",
             },
           );
           await notifications.setNotificationChannelAsync(
@@ -125,10 +125,10 @@ class NotificationService {
       content: {
         title,
         body,
-        sound: "alert.wav",
+        sound: "alert.mp3",
         priority: notifications.AndroidNotificationPriority.HIGH,
         data: { type: "medication", name: body },
-        ...(Platform.OS === "android" && { channelId: "medication_channel" }),
+        ...(Platform.OS === "android" && { channelId: "medication_channel_v4" }),
       },
       trigger: {
         type: notifications.SchedulableTriggerInputTypes.DAILY,
