@@ -175,9 +175,14 @@ export default function ContactsScreen() {
                 </View>
               </AccessibleButton>
 
-              <Text style={styles.contactName} numberOfLines={1}>
-                {item.name}
-              </Text>
+              <View style={styles.contactInfo}>
+                <Text style={styles.contactName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.contactPhone} numberOfLines={1}>
+                  {item.phone}
+                </Text>
+              </View>
 
               <View style={styles.callButton}>
                 <Ionicons name="call" size={18} color={AppColors.dark} />
@@ -415,12 +420,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BorderColor,
   },
-  contactName: {
+  contactInfo: {
     flex: 1,
+    marginLeft: Spacing.sm,
+    justifyContent: "center",
+  },
+  contactName: {
     fontSize: FontSizes.xxl,
     fontWeight: "600",
     color: AppColors.text,
-    marginLeft: Spacing.sm,
+  },
+  contactPhone: {
+    fontSize: FontSizes.sm,
+    color: MutedColor,
+    marginTop: 2,
   },
   callButton: {
     flexDirection: "row",
