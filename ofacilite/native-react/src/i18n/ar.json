@@ -102,5 +102,11 @@
   "map_desc_directions": "الاتجاهات للذهاب إلى {{name}}.",
   "contacts_desc_scan": "مسح بالكاميرا",
   "contacts_desc_add_contact": "إضافة جهة اتصال",
-  "health_desc_scan": "مسح بالكاميرا"
+  "health_desc_scan": "مسح بالكاميرا",
+  "health_edit_medication": "تعديل الدواء",
+  "health_med_frequency": "عدد المرات في اليوم (مثال: 3)",
+  "health_med_duration": "المدة (بالأيام، اختياري)",
+  "health_med_times": "أوقات التناول:",
+  "health_med_remaining": "متبقي {{days}} يوم/أيام",
+  "health_med_finished": "انتهى"
 }

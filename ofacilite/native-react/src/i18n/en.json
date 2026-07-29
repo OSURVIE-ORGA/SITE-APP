@@ -102,5 +102,11 @@
   "map_desc_directions": "Directions to go to {{name}}.",
   "contacts_desc_scan": "Scan with camera",
   "contacts_desc_add_contact": "Add a contact",
-  "health_desc_scan": "Scan with camera"
+  "health_desc_scan": "Scan with camera",
+  "health_edit_medication": "Edit medication",
+  "health_med_frequency": "Times per day (e.g., 3)",
+  "health_med_duration": "Duration (in days, optional)",
+  "health_med_times": "Intake times:",
+  "health_med_remaining": "{{days}} day(s) remaining",
+  "health_med_finished": "Finished"
 }

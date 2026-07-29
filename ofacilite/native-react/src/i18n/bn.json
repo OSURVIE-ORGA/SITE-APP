@@ -102,5 +102,11 @@
   "map_desc_directions": "{{name}} এ যাওয়ার দিকনির্দেশ।",
   "contacts_desc_scan": "ক্যামেরা দিয়ে স্ক্যান করুন",
   "contacts_desc_add_contact": "একটি পরিচিতি যোগ করুন",
-  "health_desc_scan": "ক্যামেরা দিয়ে স্ক্যান করুন"
+  "health_desc_scan": "ক্যামেরা দিয়ে স্ক্যান করুন",
+  "health_edit_medication": "ওষুধ সম্পাদনা করুন",
+  "health_med_frequency": "দিনে কতবার (যেমন: ৩)",
+  "health_med_duration": "সময়কাল (দিনে, ঐচ্ছিক)",
+  "health_med_times": "খাওয়ার সময়:",
+  "health_med_remaining": "{{days}} দিন বাকি",
+  "health_med_finished": "শেষ"
 }

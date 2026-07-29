@@ -102,5 +102,11 @@
   "map_desc_directions": "Sira k'a taa {{name}} ma.",
   "contacts_desc_scan": "Sikan kɛ ni kameray ye",
   "contacts_desc_add_contact": "Kontaki d'a kan",
-  "health_desc_scan": "Sikan kɛ ni kameray ye"
+  "health_desc_scan": "Sikan kɛ ni kameray ye",
+  "health_edit_medication": "Yɛlɛma fura",
+  "health_med_frequency": "Siɲɛ hakɛ don o don (nyɛyirali: 3)",
+  "health_med_duration": "Tile hakɛ",
+  "health_med_times": "Wakati:",
+  "health_med_remaining": "A tora tile {{days}}",
+  "health_med_finished": "A banna"
 }

@@ -5,6 +5,8 @@ export interface Medication {
   name: string;
   photoPath: string | null;
   notificationId: string;
+  startDate?: number;
+  durationDays?: number;
 }
 
 export interface MedicationTime {
@@ -51,7 +53,9 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       photo_path TEXT,
-      notification_id TEXT NOT NULL DEFAULT ''
+      notification_id TEXT NOT NULL DEFAULT '',
+      start_date INTEGER,
+      duration_days INTEGER
     );
     CREATE TABLE IF NOT EXISTS medication_times (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,6 +72,9 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
       notification_id TEXT NOT NULL DEFAULT ''
     );
   `);
+
+  try { await db.execAsync('ALTER TABLE medications ADD COLUMN start_date INTEGER;'); } catch (e) {}
+  try { await db.execAsync('ALTER TABLE medications ADD COLUMN duration_days INTEGER;'); } catch (e) {}
 
   return db;
 }
@@ -107,7 +114,7 @@ export async function deleteContact(id: string): Promise<void> {
 export async function getMedicationsWithTimes(): Promise<MedicationWithTimes[]> {
   const database = await getDb();
   const meds = await database.getAllAsync<Medication>(
-    'SELECT id, name, photo_path as photoPath, notification_id as notificationId FROM medications',
+    'SELECT id, name, photo_path as photoPath, notification_id as notificationId, start_date as startDate, duration_days as durationDays FROM medications',
   );
   const result: MedicationWithTimes[] = [];
   for (const med of meds) {
@@ -124,11 +131,13 @@ export async function addMedication(
   name: string,
   photoPath: string | null,
   notificationId: string,
+  startDate?: number,
+  durationDays?: number,
 ): Promise<number> {
   const database = await getDb();
   const result = await database.runAsync(
-    'INSERT INTO medications (name, photo_path, notification_id) VALUES (?, ?, ?)',
-    [name, photoPath, notificationId],
+    'INSERT INTO medications (name, photo_path, notification_id, start_date, duration_days) VALUES (?, ?, ?, ?, ?)',
+    [name, photoPath, notificationId, startDate || null, durationDays || null],
   );
   return result.lastInsertRowId;
 }
@@ -148,6 +157,24 @@ export async function addMedicationTime(medicationId: number, hour: number, minu
     [medicationId, hour, minute],
   );
   return result.lastInsertRowId;
+}
+
+export async function updateMedication(
+  id: number,
+  name: string,
+  photoPath: string | null,
+  durationDays?: number
+): Promise<void> {
+  const database = await getDb();
+  await database.runAsync(
+    'UPDATE medications SET name = ?, photo_path = ?, duration_days = ? WHERE id = ?',
+    [name, photoPath, durationDays || null, id],
+  );
+}
+
+export async function deleteMedicationTimes(medicationId: number): Promise<void> {
+  const database = await getDb();
+  await database.runAsync('DELETE FROM medication_times WHERE medication_id = ?', [medicationId]);
 }
 
 export async function deleteMedication(id: number): Promise<void> {

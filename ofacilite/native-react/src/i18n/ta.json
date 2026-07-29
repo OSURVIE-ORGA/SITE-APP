@@ -102,5 +102,11 @@
   "map_desc_directions": "{{name}} க்குச் செல்ல வழிகள்.",
   "contacts_desc_scan": "கேமரா மூலம் ஸ்கேன் செய்யவும்",
   "contacts_desc_add_contact": "தொடர்பைச் சேர்க்கவும்",
-  "health_desc_scan": "கேமரா மூலம் ஸ்கேன் செய்யவும்"
+  "health_desc_scan": "கேமரா மூலம் ஸ்கேன் செய்யவும்",
+  "health_edit_medication": "மருந்தை திருத்து",
+  "health_med_frequency": "ஒரு நாளைக்கு எத்தனை முறை (உதாரணம்: 3)",
+  "health_med_duration": "கால அளவு (நாட்களில், விருப்பம்)",
+  "health_med_times": "உட்கொள்ளும் நேரங்கள்:",
+  "health_med_remaining": "{{days}} நாள்(கள்) மீதம்",
+  "health_med_finished": "முடிந்தது"
 }

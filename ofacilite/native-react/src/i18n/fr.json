@@ -104,5 +104,11 @@
   "map_desc_directions": "Itinéraire pour aller à {{name}}.",
   "contacts_desc_scan": "Scanner avec l'appareil photo",
   "contacts_desc_add_contact": "Ajouter un contact",
-  "health_desc_scan": "Scanner avec l'appareil photo"
+  "health_desc_scan": "Scanner avec l'appareil photo",
+  "health_edit_medication": "Modifier le médicament",
+  "health_med_frequency": "Nombre de fois par jour (ex: 3)",
+  "health_med_duration": "Durée (en jours, optionnel)",
+  "health_med_times": "Heures de prise :",
+  "health_med_remaining": "Reste {{days}} jour(s)",
+  "health_med_finished": "Terminé"
 }

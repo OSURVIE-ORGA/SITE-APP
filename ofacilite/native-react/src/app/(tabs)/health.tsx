@@ -34,6 +34,8 @@ import {
     MedicationWithTimes,
     updateAppointmentNotificationId,
     updateMedicationNotificationId,
+    updateMedication,
+    deleteMedicationTimes,
 } from "@/services/database";
 import NotificationService from "@/services/notification-service";
 import TtsService from "@/services/tts-service";
@@ -52,10 +54,13 @@ export default function HealthScreen() {
   // Dialog states
   const [showMedDialog, setShowMedDialog] = useState(false);
   const [showApptDialog, setShowApptDialog] = useState(false);
+  const [editingMedId, setEditingMedId] = useState<number | null>(null);
   const [medName, setMedName] = useState("");
   const [medTimes, setMedTimes] = useState<{ hour: number; minute: number }[]>([
     { hour: 8, minute: 0 },
   ]);
+  const [medFrequency, setMedFrequency] = useState("");
+  const [medDuration, setMedDuration] = useState("");
   const [medPhoto, setMedPhoto] = useState<string | null>(null);
   const [apptReason, setApptReason] = useState("");
   const [apptDoctor, setApptDoctor] = useState("");
@@ -99,8 +104,11 @@ export default function HealthScreen() {
     const uri = result.assets[0].uri;
     
     if (activeTab === "medications") {
+      setEditingMedId(null);
       setMedPhoto(uri);
       setMedName("");
+      setMedFrequency("1");
+      setMedDuration("");
       setMedTimes([{ hour: 8, minute: 0 }]);
       setShowMedDialog(true);
     } else {
@@ -117,7 +125,21 @@ export default function HealthScreen() {
     if (!medName.trim()) return;
     setShowMedDialog(false);
 
-    const medId = await addMedication(medName.trim(), medPhoto, "");
+    const durationNum = parseInt(medDuration);
+    const validDuration = !isNaN(durationNum) && durationNum > 0 ? durationNum : undefined;
+    
+    let medId = editingMedId;
+
+    if (medId) {
+      await updateMedication(medId, medName.trim(), medPhoto, validDuration);
+      for (let i = 0; i < 6; i++) {
+        await NotificationService.instance.cancel(`med_${medId}_${i}`);
+      }
+      await deleteMedicationTimes(medId);
+    } else {
+      const startDate = Date.now();
+      medId = await addMedication(medName.trim(), medPhoto, "", startDate, validDuration);
+    }
 
     for (let i = 0; i < medTimes.length; i++) {
       await addMedicationTime(medId, medTimes[i].hour, medTimes[i].minute);
@@ -132,7 +154,10 @@ export default function HealthScreen() {
     }
 
     await updateMedicationNotificationId(medId, `med_${medId}`);
+    setEditingMedId(null);
     setMedName("");
+    setMedFrequency("");
+    setMedDuration("");
     setMedTimes([{ hour: 8, minute: 0 }]);
     setMedPhoto(null);
     await loadData();
@@ -234,12 +259,37 @@ export default function HealthScreen() {
         )
         .join(", ");
 
+      let remainingDaysLabel = null;
+      if (item.medication.startDate && item.medication.durationDays) {
+        const start = new Date(item.medication.startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(start.getTime() + item.medication.durationDays * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const diffTime = end.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0) {
+          remainingDaysLabel = t("health_med_remaining", { days: diffDays });
+        } else {
+          remainingDaysLabel = t("health_med_finished");
+        }
+      }
+
       return (
         <Swipeable
           renderRightActions={renderDeleteAction}
           onSwipeableOpen={() => handleDeleteMedication(item)}
         >
           <Pressable
+            onPress={() => {
+              setEditingMedId(item.medication.id);
+              setMedName(item.medication.name);
+              setMedFrequency(item.times.length.toString());
+              setMedDuration(item.medication.durationDays ? item.medication.durationDays.toString() : "");
+              setMedTimes(item.times.map(t => ({ hour: t.hour, minute: t.minute })));
+              setMedPhoto(item.medication.photoPath);
+              setShowMedDialog(true);
+            }}
             onLongPress={() =>
               TtsService.instance.speak(
                 t("health_desc_med", {
@@ -266,6 +316,11 @@ export default function HealthScreen() {
               <Text style={styles.cardTitle}>{item.medication.name}</Text>
               {timesLabel ? (
                 <Text style={styles.cardSubtitle}>{timesLabel}</Text>
+              ) : null}
+              {remainingDaysLabel ? (
+                <Text style={[styles.cardSubtitle, { color: AppColors.primary, fontWeight: 'bold' }]}>
+                  {remainingDaysLabel}
+                </Text>
               ) : null}
             </View>
           </Pressable>
@@ -436,8 +491,17 @@ export default function HealthScreen() {
                 : t("health_desc_fab_appt")
             }
             onTap={() => {
-              if (activeTab === "medications") setShowMedDialog(true);
-              else setShowApptDialog(true);
+              if (activeTab === "medications") {
+                setEditingMedId(null);
+                setMedName("");
+                setMedFrequency("");
+                setMedDuration("");
+                setMedTimes([{ hour: 8, minute: 0 }]);
+                setMedPhoto(null);
+                setShowMedDialog(true);
+              } else {
+                setShowApptDialog(true);
+              }
             }}
           >
             <View style={styles.fab}>
@@ -451,7 +515,7 @@ export default function HealthScreen() {
           <View style={styles.dialogBackdrop}>
             <View style={styles.dialog}>
               <Text style={styles.dialogTitle}>
-                {t("health_add_medication")}
+                {editingMedId ? t("health_edit_medication") : t("health_add_medication")}
               </Text>
               <TextInput
                 style={styles.input}
@@ -460,6 +524,37 @@ export default function HealthScreen() {
                 onChangeText={setMedName}
                 autoCapitalize="sentences"
               />
+              <TextInput
+                style={styles.input}
+                placeholder={t("health_med_frequency")}
+                value={medFrequency}
+                onChangeText={(text) => {
+                  setMedFrequency(text);
+                  const num = parseInt(text);
+                  if (!isNaN(num) && num > 0 && num <= 6) {
+                    if (num > medTimes.length) {
+                      const newTimes = [...medTimes];
+                      for (let i = medTimes.length; i < num; i++) {
+                        newTimes.push({ hour: 12, minute: 0 });
+                      }
+                      setMedTimes(newTimes);
+                    } else if (num < medTimes.length) {
+                      setMedTimes(medTimes.slice(0, num));
+                    }
+                  }
+                }}
+                keyboardType="numeric"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder={t("health_med_duration")}
+                value={medDuration}
+                onChangeText={setMedDuration}
+                keyboardType="numeric"
+              />
+              <Text style={{ fontSize: FontSizes.md, color: AppColors.text, marginTop: Spacing.sm }}>
+                {t("health_med_times")}
+              </Text>
               {medTimes.map((time, i) => (
                 <View key={i} style={styles.timeRow}>
                   <Ionicons name="time" size={20} color={AppColors.text} />
@@ -528,34 +623,8 @@ export default function HealthScreen() {
                       }}
                     />
                   )}
-                  {medTimes.length > 1 && (
-                    <Pressable
-                      onPress={() =>
-                        setMedTimes((prev) =>
-                          prev.filter((_, idx) => idx !== i),
-                        )
-                      }
-                    >
-                      <Ionicons
-                        name="remove-circle-outline"
-                        size={24}
-                        color={AppColors.red}
-                      />
-                    </Pressable>
-                  )}
                 </View>
               ))}
-              {medTimes.length < 6 && (
-                <Pressable
-                  onPress={() =>
-                    setMedTimes((prev) => [...prev, { hour: 12, minute: 0 }])
-                  }
-                  style={styles.addTimeButton}
-                >
-                  <Ionicons name="add" size={18} color={AppColors.primary} />
-                  <Text style={styles.addTimeText}>{t("health_add_time")}</Text>
-                </Pressable>
-              )}
               <View style={styles.photoRow}>
                 <Pressable
                   style={styles.photoPickerButton}

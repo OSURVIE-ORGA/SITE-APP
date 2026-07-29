@@ -102,5 +102,11 @@
   "map_desc_directions": "Yoon ngir dem {{name}}.",
   "contacts_desc_scan": "Scan ak kamera bi",
   "contacts_desc_add_contact": "Yok contact",
-  "health_desc_scan": "Scan ak kamera bi"
+  "health_desc_scan": "Scan ak kamera bi",
+  "health_edit_medication": "Soppi garab",
+  "health_med_frequency": "Ñata yoon ci bés bi (misal: 3)",
+  "health_med_duration": "Fan yiy jël (bu la neexee)",
+  "health_med_times": "Waxtuy jël:",
+  "health_med_remaining": "Des na {{days}} fan",
+  "health_med_finished": "Jeex na"
 }
