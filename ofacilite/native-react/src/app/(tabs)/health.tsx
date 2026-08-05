@@ -40,6 +40,7 @@ import {
 import NotificationService from "@/services/notification-service";
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
+import ApiService from "@/services/api-service";
 
 type TabName = "medications" | "appointments";
 
@@ -50,9 +51,11 @@ export default function HealthScreen() {
   const [medications, setMedications] = useState<MedicationWithTimes[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Dialog states
   const [showMedDialog, setShowMedDialog] = useState(false);
+
   const [showApptDialog, setShowApptDialog] = useState(false);
   const [editingMedId, setEditingMedId] = useState<number | null>(null);
   const [medName, setMedName] = useState("");
@@ -105,12 +108,48 @@ export default function HealthScreen() {
     
     if (activeTab === "medications") {
       setEditingMedId(null);
-      setMedPhoto(uri);
-      setMedName("");
-      setMedFrequency("1");
-      setMedDuration("");
-      setMedTimes([{ hour: 8, minute: 0 }]);
-      setShowMedDialog(true);
+      setIsScanning(true);
+      try {
+        const scanResult = await ApiService.instance.scanMedicationPhoto(uri);
+        if (scanResult && scanResult.success) {
+          setMedName(scanResult.name || "");
+          setMedPhoto(scanResult.photoUrl || uri);
+          if (scanResult.durationDays) {
+            setMedDuration(scanResult.durationDays.toString());
+          } else {
+            setMedDuration("");
+          }
+
+          if (scanResult.suggestedHours && scanResult.suggestedHours.length > 0) {
+            setMedFrequency(scanResult.suggestedHours.length.toString());
+            setMedTimes(scanResult.suggestedHours.map((h) => ({ hour: h, minute: 0 })));
+          } else if (scanResult.frequency) {
+            setMedFrequency(scanResult.frequency.toString());
+            const count = Math.max(1, Math.min(6, scanResult.frequency));
+            const hours = count === 1 ? [8] : count === 2 ? [8, 20] : count === 3 ? [8, 13, 20] : [8, 12, 16, 20];
+            setMedTimes(hours.slice(0, count).map((h) => ({ hour: h, minute: 0 })));
+          } else {
+            setMedFrequency("1");
+            setMedTimes([{ hour: 8, minute: 0 }]);
+          }
+        } else {
+          setMedPhoto(uri);
+          setMedName("");
+          setMedFrequency("1");
+          setMedDuration("");
+          setMedTimes([{ hour: 8, minute: 0 }]);
+        }
+      } catch (err) {
+        console.error("Error scanning medication:", err);
+        setMedPhoto(uri);
+        setMedName("");
+        setMedFrequency("1");
+        setMedDuration("");
+        setMedTimes([{ hour: 8, minute: 0 }]);
+      } finally {
+        setIsScanning(false);
+        setShowMedDialog(true);
+      }
     } else {
       setApptReason("");
       setApptDoctor("");
@@ -118,6 +157,7 @@ export default function HealthScreen() {
       setShowApptDialog(true);
     }
   };
+
 
   // ── Medications ──────────────────────────────────────────────────
 
@@ -841,10 +881,25 @@ export default function HealthScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* Scanning Loading Modal */}
+        <Modal visible={isScanning} transparent animationType="fade">
+          <View style={styles.dialogBackdrop}>
+            <View style={[styles.dialog, { alignItems: 'center', padding: Spacing.xl }]}>
+              <ActivityIndicator size="large" color={AppColors.primary} />
+              <Text style={{ marginTop: Spacing.lg, fontSize: FontSizes.md, fontWeight: 'bold', textAlign: 'center', color: AppColors.text }}>
+                Analyse de la boîte de médicament par l'IA...
+              </Text>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </GestureHandlerRootView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {

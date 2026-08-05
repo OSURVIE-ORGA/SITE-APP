@@ -25,6 +25,17 @@ export interface ScanContactResponse {
   filename?: string;
 }
 
+export interface ScanMedicationResponse {
+  success: boolean;
+  name: string | null;
+  frequency: number | null;
+  durationDays: number | null;
+  suggestedHours: number[] | null;
+  photoUrl: string | null;
+  filename?: string;
+}
+
+
 const uriToBlob = (uri: string): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -104,6 +115,44 @@ class ApiService {
       return null;
     }
   }
+
+  /** Envoyer une photo de médicament à l'API Multer pour la sauvegarder et la scanner via IA */
+  async scanMedicationPhoto(imageUri: string): Promise<ScanMedicationResponse | null> {
+    const baseUrl = this._baseUrl || getDefaultApiUrl();
+    try {
+      const filename = imageUri.split('/').pop() || 'medication.jpg';
+      const cleanFilename = filename.split('?')[0];
+
+      let fileBlob: Blob;
+      try {
+        const res = await fetch(imageUri);
+        fileBlob = await res.blob();
+      } catch {
+        fileBlob = await uriToBlob(imageUri);
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileBlob, cleanFilename);
+
+      const response = await fetch(`${baseUrl}/mistral/scan-medication`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      } else {
+        const errorText = await response.text();
+        console.error('Server error scanMedicationPhoto:', response.status, errorText);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error scanning medication photo:', error);
+      return null;
+    }
+  }
+
 
 
 

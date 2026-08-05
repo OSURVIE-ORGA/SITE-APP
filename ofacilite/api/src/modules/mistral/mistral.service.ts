@@ -65,6 +65,48 @@ export class MistralService {
     }
   }
 
+  async medicationFromBuffer(buffer: Buffer, mimeType: string = 'image/jpeg') {
+    const base64Image = buffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    return this.medicationFromImage(dataUrl);
+  }
+
+  async medicationFromImage(image: string) {
+    const response = await this.client.chat.complete({
+      model: 'mistral-large-latest',
+      messages: [
+        {
+          role: 'system',
+          content: this.medicationSystemPrompt,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              imageUrl: image,
+            },
+          ],
+        },
+      ],
+    });
+
+    const content = response.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new NotFoundException('Aucune réponse de Mistral');
+    }
+
+    const rawString = typeof content === 'string' ? content : JSON.stringify(content);
+    const cleanedJson = rawString.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+
+    try {
+      return JSON.parse(cleanedJson);
+    } catch {
+      return { name: null, frequency: null, durationDays: null, suggestedHours: null };
+    }
+  }
+
   private readonly systemPrompt = `
 Tu es un extracteur de données.
 
@@ -83,6 +125,29 @@ Règles :
 - Si une valeur est absente, mets null.
 - Ne retourne aucun texte avant ou après le JSON.
 `;
+
+  private readonly medicationSystemPrompt = `
+Tu es un expert médical et un extracteur de données de médicaments (boîtes de médicaments, ordonnances, notices).
+
+Analyse l'image et retourne UNIQUEMENT un objet JSON valide.
+
+Format attendu :
+{
+  "name": string | null,
+  "frequency": number | null,
+  "durationDays": number | null,
+  "suggestedHours": number[] | null
 }
+
+Règles :
+- Extrais le nom exact du médicament (avec dosage si présent, ex: "Doliprane 1000mg").
+- Extrais la fréquence de prise quotidienne sous forme de chiffre (ex: 2 pour 2 fois par jour). Par défaut 1.
+- Extrais la durée du traitement en jours (ex: 7 pour 7 jours). Si non mentionné, mets null.
+- Propose des heures de prise adaptées sous forme de tableau d'heures entières (ex: [8] pour 1 prise, [8, 20] pour 2 prises, [8, 13, 20] pour 3 prises).
+- Si une valeur est introuvable, mets null.
+- Ne retourne aucun texte avant ou après le JSON.
+`;
+}
+
 
 
