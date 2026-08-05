@@ -22,12 +22,14 @@ import { AppColors, BorderRadius, BorderColor, FontSizes, MutedColor, Spacing } 
 import { addContact, AppContact, deleteContact, getContacts, updateContactPhoto } from "@/services/database";
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
+import ApiService from "@/services/api-service";
 
 export default function ContactsScreen() {
   const { t, i18n } = useTranslation();
 
   const [contacts, setContacts] = useState<AppContact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
@@ -114,12 +116,34 @@ export default function ContactsScreen() {
     if (result.canceled || !result.assets?.[0]) return;
     const uri = result.assets[0].uri;
     
-    // Simulate AI processing by directly opening the Add Contact modal with the photo
-    setNewPhoto(uri);
-    setNewName("");
-    setNewPhone("");
-    setShowAddDialog(true);
+    setIsScanning(true);
+    try {
+      const scanResult = await ApiService.instance.scanContactPhoto(uri);
+      if (scanResult && scanResult.success) {
+        setNewName(scanResult.name || "");
+        let rawPhone = scanResult.phone || "";
+        if (rawPhone.startsWith("+33")) {
+          rawPhone = "0" + rawPhone.slice(3);
+        }
+        setNewPhone(rawPhone.replace(/\+/g, "").trim());
+        setNewPhoto(scanResult.photoUrl || uri);
+      } else {
+        setNewName("");
+        setNewPhone("");
+        setNewPhoto(uri);
+      }
+
+    } catch (err) {
+      console.error("Error scanning contact photo:", err);
+      setNewName("");
+      setNewPhone("");
+      setNewPhoto(uri);
+    } finally {
+      setIsScanning(false);
+      setShowAddDialog(true);
+    }
   };
+
 
   const callContact = useCallback((phone: string) => {
     Linking.openURL(`tel:${phone}`);
@@ -342,10 +366,24 @@ export default function ContactsScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* Scanning Loading Modal */}
+        <Modal visible={isScanning} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { alignItems: 'center', padding: Spacing.xl }]}>
+              <ActivityIndicator size="large" color={AppColors.primary} />
+              <Text style={{ marginTop: Spacing.lg, fontSize: FontSizes.md, fontWeight: 'bold', textAlign: 'center', color: AppColors.dark }}>
+                Analyse de la photo et extraction du contact par l'IA...
+              </Text>
+            </View>
+          </View>
+        </Modal>
       </View>
     </GestureHandlerRootView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
