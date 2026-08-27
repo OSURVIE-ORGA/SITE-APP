@@ -25,6 +25,14 @@ export interface ScanContactResponse {
   filename?: string;
 }
 
+export interface ScanVoiceContactResponse {
+  success: boolean;
+  name: string | null;
+  phone: string | null;
+  transcript: string | null;
+  filename?: string;
+}
+
 export interface ScanMedicationResponse {
   success: boolean;
   name: string | null;
@@ -112,6 +120,44 @@ class ApiService {
       return null;
     } catch (error) {
       console.error('Error scanning contact photo:', error);
+      return null;
+    }
+  }
+
+  /** Envoyer un enregistrement audio (mode vocal) pour créer un contact via IA (transcription + extraction) */
+  async scanContactVoice(audioUri: string, language: string = 'fr'): Promise<ScanVoiceContactResponse | null> {
+    const baseUrl = this._baseUrl || getDefaultApiUrl();
+    try {
+      const filename = audioUri.split('/').pop() || 'voice.m4a';
+      const cleanFilename = filename.split('?')[0];
+
+      let fileBlob: Blob;
+      try {
+        const res = await fetch(audioUri);
+        fileBlob = await res.blob();
+      } catch {
+        fileBlob = await uriToBlob(audioUri);
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileBlob, cleanFilename);
+      formData.append('language', language);
+
+      const response = await fetch(`${baseUrl}/mistral/scan-voice`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      } else {
+        const errorText = await response.text();
+        console.error('Server error scanContactVoice:', response.status, errorText);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error scanning contact voice:', error);
       return null;
     }
   }
