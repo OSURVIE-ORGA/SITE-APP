@@ -47,6 +47,48 @@ export interface ScanMedicationResponse {
   filename?: string;
 }
 
+/** Instantané poussé vers l'API pour que l'aidant/admin puisse le consulter. */
+export interface SyncMedication {
+  name: string;
+  startDate?: string | null; // ISO
+  durationDays?: number | null;
+  times: { hour: number; minute: number }[];
+}
+
+export interface SyncAppointment {
+  title: string;
+  doctorName?: string;
+  scheduledAt: string; // ISO
+}
+
+export interface SyncContact {
+  name: string;
+  phone: string;
+}
+
+/** Formes renvoyées par l'API (GET /me/*) lors du pull à la connexion. */
+export interface ServerMedication {
+  id: string;
+  name: string;
+  startDate: string | null; // YYYY-MM-DD
+  durationDays: number | null;
+  endDate: string | null;
+  times: { hour: number; minute: number }[];
+}
+
+export interface ServerAppointment {
+  id: string;
+  title: string;
+  doctorName: string;
+  scheduledAt: string; // ISO
+}
+
+export interface ServerContact {
+  id: string;
+  name: string;
+  phone: string;
+}
+
 // React Native's fetch multipart wants a { uri, name, type } part, not a Blob.
 type RNFilePart = { uri: string; name: string; type: string };
 
@@ -245,6 +287,75 @@ class ApiService {
     if (!response) return null;
     const data = (await response.json()) as { answer?: string };
     return data.answer ?? null;
+  }
+
+  /**
+   * Pousse l'instantané complet des traitements de la personne connectée
+   * (remplace côté serveur). Silencieux : ne bloque jamais l'UI, échoue en
+   * douceur hors-ligne.
+   */
+  async syncMedications(medications: SyncMedication[]): Promise<boolean> {
+    const res = await this.request('/me/medications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ medications }),
+    });
+    return res !== null;
+  }
+
+  /** Pousse l'instantané complet des rendez-vous de la personne connectée. */
+  async syncAppointments(appointments: SyncAppointment[]): Promise<boolean> {
+    const res = await this.request('/me/appointments', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appointments }),
+    });
+    return res !== null;
+  }
+
+  /** Pousse l'instantané complet du carnet de contacts. */
+  async syncContacts(contacts: SyncContact[]): Promise<boolean> {
+    const res = await this.request('/me/contacts', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contacts }),
+    });
+    return res !== null;
+  }
+
+  /** Pull à la connexion : `null` = échec réseau (ne rien écraser en local). */
+  async getMedications(): Promise<ServerMedication[] | null> {
+    const res = await this.request('/me/medications', { method: 'GET' });
+    if (!res) return null;
+    return (await res.json()) as ServerMedication[];
+  }
+
+  async getAppointments(): Promise<ServerAppointment[] | null> {
+    const res = await this.request('/me/appointments', { method: 'GET' });
+    if (!res) return null;
+    return (await res.json()) as ServerAppointment[];
+  }
+
+  async getContacts(): Promise<ServerContact[] | null> {
+    const res = await this.request('/me/contacts', { method: 'GET' });
+    if (!res) return null;
+    return (await res.json()) as ServerContact[];
+  }
+
+  /**
+   * Réponse au rappel « Avez-vous pris votre médicament ? ». `missed` lève une
+   * alerte côté admin.
+   */
+  async reportMedication(
+    medicationName: string,
+    status: 'taken' | 'missed',
+  ): Promise<boolean> {
+    const res = await this.request('/me/medication-events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ medicationName, status }),
+    });
+    return res !== null;
   }
 
   /**

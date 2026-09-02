@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { UsersService } from '../users/users.service';
-import { AlertsService } from './alerts.service';
+import { AlertsService } from '../alerts/alerts.service';
 
 const INACTIVE_DAYS = 7;
 

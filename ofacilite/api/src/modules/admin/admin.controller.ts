@@ -16,7 +16,8 @@ import type { User } from '../users/user.entity';
 import { toUserView } from '../users/user-view';
 import { UsersService } from '../users/users.service';
 import { LoginEventsService } from '../login-events/login-events.service';
-import { AlertsService } from './alerts.service';
+import { AlertsService } from '../alerts/alerts.service';
+import { CareService } from '../care/care.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -27,6 +28,7 @@ export class AdminController {
     private readonly users: UsersService,
     private readonly alerts: AlertsService,
     private readonly loginEvents: LoginEventsService,
+    private readonly care: CareService,
   ) {}
 
   // ── Statistiques ────────────────────────────────────────────────
@@ -84,9 +86,37 @@ export class AdminController {
     return toUserView(await this.users.update(id, dto, me.id));
   }
 
+  @Get('users/:id')
+  async getOne(@Param('id', ParseUUIDPipe) id: string) {
+    return toUserView(await this.users.getByIdOrThrow(id));
+  }
+
   @Post('users/:id/regenerate-code')
   async regenerateCode(@Param('id', ParseUUIDPipe) id: string) {
     return toUserView(await this.users.regenerateLoginCode(id));
+  }
+
+  // ── Suivi santé d'une personne ─────────────────────────────────
+  // Les contacts perso de la personne ne sont volontairement PAS exposés ici.
+  @Get('users/:id/medications')
+  medicationsOf(@Param('id', ParseUUIDPipe) id: string) {
+    return this.care.listMedications(id);
+  }
+
+  @Get('users/:id/appointments')
+  appointmentsOf(@Param('id', ParseUUIDPipe) id: string) {
+    return this.care.listAppointments(id);
+  }
+
+  @Get('users/:id/medication-events')
+  medicationEventsOf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.care.listMedicationEvents(
+      id,
+      Math.min(200, Math.max(1, Number(limit) || 50)),
+    );
   }
 
   @Delete('users/:id')

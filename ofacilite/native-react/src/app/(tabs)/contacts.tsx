@@ -24,6 +24,7 @@ import { addContact, AppContact, deleteContact, getContacts, updateContact, upda
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
 import ApiService from "@/services/api-service";
+import { pushContacts } from "@/services/sync-service";
 
 /**
  * minuscules, sans diacritiques (accents latins ET harakat arabes), sans
@@ -124,6 +125,7 @@ export default function ContactsScreen() {
     const data = await getContacts();
     setContacts(data);
     setLoading(false);
+    void pushContacts();
   };
 
   const handleImportFromPhone = async () => {

@@ -248,3 +248,84 @@ export async function deleteAppointment(id: number): Promise<void> {
   const database = await getDb();
   await database.runAsync('DELETE FROM appointments WHERE id = ?', [id]);
 }
+
+export async function getAllAppointments(): Promise<Appointment[]> {
+  const database = await getDb();
+  return database.getAllAsync<Appointment>(
+    `SELECT id, title, doctor_name as doctorName, scheduled_at as scheduledAt, notification_id as notificationId
+     FROM appointments ORDER BY scheduled_at ASC`,
+  );
+}
+
+// ── Synchronisation compte (remplacement complet depuis le serveur) ───────────
+
+export interface PulledMedication {
+  name: string;
+  startDate: number | null;
+  durationDays: number | null;
+  times: { hour: number; minute: number }[];
+}
+
+export async function replaceAllContacts(
+  rows: { id: string; name: string; phone: string; photoPath: string | null }[],
+): Promise<void> {
+  const database = await getDb();
+  await database.withTransactionAsync(async () => {
+    await database.runAsync('DELETE FROM contacts');
+    for (const r of rows) {
+      await database.runAsync(
+        'INSERT INTO contacts (id, name, phone, photo_path) VALUES (?, ?, ?, ?)',
+        [r.id, r.name, r.phone, r.photoPath],
+      );
+    }
+  });
+}
+
+export async function replaceAllMedications(
+  rows: PulledMedication[],
+): Promise<void> {
+  const database = await getDb();
+  await database.withTransactionAsync(async () => {
+    await database.runAsync('DELETE FROM medication_times');
+    await database.runAsync('DELETE FROM medications');
+    for (const r of rows) {
+      const res = await database.runAsync(
+        'INSERT INTO medications (name, photo_path, notification_id, start_date, duration_days) VALUES (?, ?, ?, ?, ?)',
+        [r.name, null, '', r.startDate ?? null, r.durationDays ?? null],
+      );
+      const medId = res.lastInsertRowId;
+      for (const t of r.times) {
+        await database.runAsync(
+          'INSERT INTO medication_times (medication_id, hour, minute) VALUES (?, ?, ?)',
+          [medId, t.hour, t.minute],
+        );
+      }
+    }
+  });
+}
+
+export async function replaceAllAppointments(
+  rows: { title: string; doctorName: string; scheduledAt: number }[],
+): Promise<void> {
+  const database = await getDb();
+  await database.withTransactionAsync(async () => {
+    await database.runAsync('DELETE FROM appointments');
+    for (const r of rows) {
+      await database.runAsync(
+        'INSERT INTO appointments (title, doctor_name, scheduled_at, notification_id) VALUES (?, ?, ?, ?)',
+        [r.title, r.doctorName, r.scheduledAt, ''],
+      );
+    }
+  });
+}
+
+/** Efface toutes les données locales de la personne (déconnexion). */
+export async function wipeUserData(): Promise<void> {
+  const database = await getDb();
+  await database.execAsync(`
+    DELETE FROM medication_times;
+    DELETE FROM medications;
+    DELETE FROM appointments;
+    DELETE FROM contacts;
+  `);
+}

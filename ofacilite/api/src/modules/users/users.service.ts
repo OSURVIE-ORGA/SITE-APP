@@ -68,6 +68,10 @@ export class UsersService implements OnApplicationBootstrap {
     return this.repo.findOne({ where: { id } });
   }
 
+  getByIdOrThrow(id: string): Promise<User> {
+    return this.requireUser(id);
+  }
+
   list(): Promise<User[]> {
     return this.repo.find({ order: { createdAt: 'DESC' } });
   }

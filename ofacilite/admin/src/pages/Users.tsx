@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { activityDot, api, LANGS, relativeTime, type ApiUser } from '../lib';
 import { Icon, useDialog } from '../ui';
 
@@ -227,9 +228,12 @@ export function Users() {
                           </span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 font-medium">
-                              <span className="truncate">
+                              <Link
+                                to={`/users/${u.id}`}
+                                className="truncate hover:text-primary hover:underline"
+                              >
                                 {u.firstName} {u.lastName}
-                              </span>
+                              </Link>
                               {u.role === 'admin' && (
                                 <span className="badge badge-primary badge-sm">
                                   admin

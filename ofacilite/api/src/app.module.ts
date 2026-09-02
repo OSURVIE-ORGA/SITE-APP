@@ -11,11 +11,18 @@ import { MistralModule } from './modules/mistral/mistral.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { UsersModule } from './modules/users/users.module';
 import { User } from './modules/users/user.entity';
-import { AdminAlert } from './modules/admin/alert.entity';
+import { AdminAlert } from './modules/alerts/alert.entity';
 import { LoginEvent } from './modules/login-events/login-event.entity';
 import { LoginEventsModule } from './modules/login-events/login-events.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AlertsModule } from './modules/alerts/alerts.module';
+import { CareModule } from './modules/care/care.module';
+import { Medication } from './modules/care/medication.entity';
+import { MedicationTime } from './modules/care/medication-time.entity';
+import { Appointment } from './modules/care/appointment.entity';
+import { MedicationEvent } from './modules/care/medication-event.entity';
+import { Contact } from './modules/care/contact.entity';
 
 @Module({
   imports: [
@@ -40,9 +47,18 @@ import { AdminModule } from './modules/admin/admin.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
-        entities: [User, AdminAlert, LoginEvent],
+        entities: [
+          User,
+          AdminAlert,
+          LoginEvent,
+          Medication,
+          MedicationTime,
+          Appointment,
+          MedicationEvent,
+          Contact,
+        ],
         // v1 : le schéma est créé/aligné au démarrage. Passer aux migrations
-        // TypeORM quand les tables de suivi (prises de médicaments…) arriveront.
+        // TypeORM quand les données de prod seront réelles.
         synchronize: true,
       }),
     }),
@@ -52,6 +68,8 @@ import { AdminModule } from './modules/admin/admin.module';
     UsersModule,
     LoginEventsModule,
     AuthModule,
+    AlertsModule,
+    CareModule,
     AdminModule,
   ],
   providers: [

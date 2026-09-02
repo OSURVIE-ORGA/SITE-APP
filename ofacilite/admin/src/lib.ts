@@ -44,6 +44,31 @@ export interface LoginDay {
   count: number;
 }
 
+export interface CareMedication {
+  id: string;
+  name: string;
+  startDate: string | null;
+  durationDays: number | null;
+  endDate: string | null;
+  times: { hour: number; minute: number }[];
+  updatedAt: string;
+}
+
+export interface CareAppointment {
+  id: string;
+  title: string;
+  doctorName: string;
+  scheduledAt: string;
+  updatedAt: string;
+}
+
+export interface CareMedicationEvent {
+  id: string;
+  medicationName: string;
+  status: 'taken' | 'missed';
+  reportedAt: string;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,

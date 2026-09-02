@@ -9,6 +9,7 @@ import {
 } from "react";
 import * as SecureStore from "expo-secure-store";
 import ApiService from "@/services/api-service";
+import { clearLocalOnSignOut, pullFromServer } from "@/services/sync-service";
 
 const TOKEN_KEY = "ofacilite.token";
 
@@ -24,16 +25,30 @@ const AuthCtx = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const signingOut = useRef(false);
 
   const apply = useCallback((t: string | null) => {
     ApiService.instance.setAuthToken(t);
     setToken(t);
   }, []);
 
-  const signOut = useCallback(async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
-    apply(null);
-  }, [apply]);
+  const signOut = useCallback(
+    async (forced = false) => {
+      if (signingOut.current) return;
+      signingOut.current = true;
+      try {
+        // Déconnexion volontaire : on sauvegarde vers le compte puis on efface
+        // les données locales de la personne. Sur un 401 (jeton mort) on ne
+        // touche pas au local — le pull à la prochaine connexion réconciliera.
+        if (!forced) await clearLocalOnSignOut().catch(() => {});
+        await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+        apply(null);
+      } finally {
+        signingOut.current = false;
+      }
+    },
+    [apply],
+  );
 
   // Ref pour que le callback 401 pointe toujours vers le signOut courant.
   const signOutRef = useRef(signOut);
@@ -41,12 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     ApiService.instance.setOnUnauthorized(() => {
-      void signOutRef.current();
+      void signOutRef.current(true);
     });
     (async () => {
       try {
         const stored = await SecureStore.getItemAsync(TOKEN_KEY);
         apply(stored ?? null);
+        if (stored) void pullFromServer().catch(() => {});
       } finally {
         setLoading(false);
       }
@@ -62,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       await SecureStore.setItemAsync(TOKEN_KEY, jwt);
       apply(jwt);
+      // Le compte fait foi : on récupère ses données avant d'entrer dans l'appli.
+      await pullFromServer().catch(() => {});
     },
     [apply],
   );

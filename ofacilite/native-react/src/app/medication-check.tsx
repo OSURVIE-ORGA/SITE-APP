@@ -6,6 +6,7 @@ import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
 import TtsService from "@/services/tts-service";
 import { useTranslation } from "react-i18next";
 import { getMedicationsWithTimes } from "@/services/database";
+import ApiService from "@/services/api-service";
 
 export default function MedicationCheckScreen() {
   const router = useRouter();
@@ -30,11 +31,15 @@ export default function MedicationCheckScreen() {
       <Text style={styles.question}>Avez-vous pris votre médicament ?</Text>
       
       <View style={styles.actions}>
-        <Pressable 
-          style={[styles.button, styles.btnYes]} 
+        <Pressable
+          style={[styles.button, styles.btnYes]}
           onPress={async () => {
             TtsService.instance.stop();
-            
+
+            ApiService.instance
+              .reportMedication((name || "").trim() || "Traitement", "taken")
+              .catch(() => {});
+
             if (name) {
               try {
                 const meds = await getMedicationsWithTimes();
@@ -61,10 +66,13 @@ export default function MedicationCheckScreen() {
           <Text style={styles.btnText}>Oui, j'ai pris</Text>
         </Pressable>
         
-        <Pressable 
-          style={[styles.button, styles.btnNo]} 
+        <Pressable
+          style={[styles.button, styles.btnNo]}
           onPress={() => {
             TtsService.instance.stop();
+            ApiService.instance
+              .reportMedication((name || "").trim() || "Traitement", "missed")
+              .catch(() => {});
             router.back();
           }}
         >

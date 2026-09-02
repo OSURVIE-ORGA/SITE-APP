@@ -42,6 +42,7 @@ import NotificationService from "@/services/notification-service";
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
 import ApiService from "@/services/api-service";
+import { pushAppointments, pushMedications } from "@/services/sync-service";
 import VoiceInput from "@/components/voice-input";
 
 type TabName = "medications" | "appointments";
@@ -315,6 +316,8 @@ export default function HealthScreen() {
     setMedications(meds);
     setAppointments(appts);
     setLoading(false);
+    void pushMedications();
+    void pushAppointments();
   };
 
   // ── Ajout d'un médicament à la voix, champ par champ ─────────────

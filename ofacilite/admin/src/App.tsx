@@ -6,6 +6,7 @@ import { DialogProvider, Layout } from './ui';
 import { Login } from './pages/Login';
 import { Overview } from './pages/Overview';
 import { Users } from './pages/Users';
+import { UserDetail } from './pages/UserDetail';
 import { Alerts } from './pages/Alerts';
 
 export function App() {
@@ -31,6 +32,7 @@ export function App() {
           <Route element={<Shell />}>
             <Route index element={<Overview />} />
             <Route path="users" element={<Users />} />
+            <Route path="users/:id" element={<UserDetail />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
