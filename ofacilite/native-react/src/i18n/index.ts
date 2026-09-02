@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import fr from './fr.json';
@@ -33,6 +34,28 @@ i18next.use(initReactI18next).init({
   interpolation: {
     escapeValue: false,
   },
+});
+
+// ── Persistance de la langue choisie ────────────────────────────────────────
+export const LANGUAGE_STORAGE_KEY = 'ofacilite.lang';
+
+const SUPPORTED_CODES: readonly string[] = SUPPORTED_LANGUAGES.map(
+  (l) => l.code,
+);
+
+/** Au démarrage : restaure la langue enregistrée (l'app affiche 'fr' le temps
+ *  que AsyncStorage réponde, puis bascule si une préférence existe). */
+AsyncStorage.getItem(LANGUAGE_STORAGE_KEY)
+  .then((code) => {
+    if (code && SUPPORTED_CODES.includes(code) && code !== i18next.language) {
+      void i18next.changeLanguage(code);
+    }
+  })
+  .catch(() => {});
+
+/** Tout changement de langue est enregistré (survit à la fermeture de l'app). */
+i18next.on('languageChanged', (code) => {
+  void AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, code).catch(() => {});
 });
 
 export default i18next;
