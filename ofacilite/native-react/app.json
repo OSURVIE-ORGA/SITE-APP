@@ -54,9 +54,17 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "L'app utilise la caméra pour scanner vos documents et vous aider à les lire."
+        }
+      ],
+      [
         "expo-notifications",
         {
-          "sounds": ["./assets/alert.mp3"]
+          "sounds": [
+            "./assets/alert.mp3"
+          ]
         }
       ],
       [
