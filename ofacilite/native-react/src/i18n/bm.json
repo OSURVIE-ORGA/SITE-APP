@@ -190,5 +190,11 @@
   "health_med_times": "Wakati:",
   "health_med_remaining": "A tora tile {{days}}",
   "health_med_finished": "A banna",
-  "document_too_slow": "A mèna kojugu. Segin k’a kè ni ja jèlen ye, walima dosiye fitini."
+  "document_too_slow": "A mèna kojugu. Segin k’a kè ni ja jèlen ye, walima dosiye fitini.",
+  "health_edit_appointment": "Ɲɔgɔnye yɛlɛma",
+  "map_say_place": "A fɔ i bɛ taa yɔrɔ min",
+  "map_desc_say_place": "Digili kɛ, yɔrɔ tɔgɔ fɔ, ne bɛ GPS daminɛ sen na.",
+  "map_say_place_prompt": "Yɔrɔ tɔgɔ fɔ, walima : meri, ɲɛmɔgɔ dɛmɛ, dumuni bank.",
+  "map_guiding": "N bɛ i ɲɛminɛ sen na ka taa {{name}}.",
+  "map_place_not_found": "N ma o yɔrɔ sɔrɔ. Segin k’a kɛ."
 }

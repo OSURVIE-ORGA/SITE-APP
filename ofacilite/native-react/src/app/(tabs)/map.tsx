@@ -14,6 +14,7 @@ import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AccessibleButton from "@/components/accessible-button";
+import VoiceInput from "@/components/voice-input";
 import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
 import placesData from "@/data/places.json";
 import TtsService from "@/services/tts-service";
@@ -27,6 +28,65 @@ interface Place {
   latitude: number;
   longitude: number;
   image?: string;
+}
+
+/** minuscules, sans accents, garde tous les alphabets. */
+function normPlace(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Mots-clés par catégorie (fr + ar + bn + ta) pour « dites : mairie, aide sociale… ».
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  Mairie: ["mairie", "town hall", "hotel de ville", "بلدية", "البلدية", "நகராட்சி", "টাউন হল", "পৌরসভা"],
+  CCAS: [
+    "ccas", "centre communal", "aide sociale", "action sociale",
+    "assistante sociale", "الشؤون الاجتماعية", "المساعدة الاجتماعية",
+    "சமூக சேவை", "সামাজিক পরিষেবা",
+  ],
+  "Banque alimentaire": [
+    "banque alimentaire", "food bank", "nourriture", "manger", "colis",
+    "alimentaire", "بنك الطعام", "طعام", "খাবার", "ফুড ব্যাংক", "உணவு வங்கி",
+  ],
+  Numérique: [
+    "numerique", "ordinateur", "internet", "informatique", "computer",
+    "digital", "الرقمي", "كمبيوتر", "انترنت", "கணினி", "இணையம்", "কম্পিউটার",
+  ],
+  "O'Survie": [
+    "o survie", "osurvie", "survie", "permanence", "association",
+    "الجمعية", "أوسورفي", "அமைப்பு", "সংস্থা",
+  ],
+};
+
+/** Retrouve le lieu qui colle le mieux à ce qui a été dit (nom ou catégorie). */
+function findPlaceByVoice(spoken: string, places: Place[]): Place | null {
+  const q = normPlace(spoken);
+  if (!q) return null;
+  const qTokens = q.split(" ").filter(Boolean);
+
+  let best: { p: Place; score: number } | null = null;
+  for (const p of places) {
+    const name = normPlace(p.name);
+    let score = 0;
+    if (name === q) score = 100;
+    else if (name.includes(q) || q.includes(name)) score = 70;
+    else {
+      const nameTokens = new Set(name.split(" "));
+      score =
+        qTokens.filter((w) => w.length > 2 && nameTokens.has(w)).length * 20;
+    }
+    const kws = CATEGORY_KEYWORDS[p.category] ?? [];
+    if (kws.some((kw) => q.includes(normPlace(kw)))) {
+      score = Math.max(score, 55);
+    }
+    if (score > 0 && (!best || score > best.score)) best = { p, score };
+  }
+  return best && best.score >= 20 ? best.p : null;
 }
 
 function categoryColor(category: string): string {
@@ -71,12 +131,31 @@ export default function MapScreen() {
 
   const [places] = useState<Place[]>(placesData as Place[]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [showVoiceDialog, setShowVoiceDialog] = useState(false);
 
   useAutoTTS("map_tts_intro");
 
   const showPlaceSheet = (place: Place) => {
     TtsService.instance.stop();
     setSelectedPlace(place);
+  };
+
+  const openWalkingDirections = (place: Place) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}&travelmode=walking`;
+    Linking.openURL(url);
+  };
+
+  // « Dites où aller » -> trouve le lieu et lance le GPS à pied directement.
+  const handleVoicePlace = async (transcript: string) => {
+    setShowVoiceDialog(false);
+    const place = findPlaceByVoice(transcript, places);
+    await TtsService.instance.stop();
+    if (place) {
+      await TtsService.instance.speak(t("map_guiding", { name: place.name }));
+      openWalkingDirections(place);
+    } else {
+      await TtsService.instance.speak(t("map_place_not_found"));
+    }
   };
 
   const mapHtml = useMemo(() => {
@@ -140,9 +219,12 @@ export default function MapScreen() {
     const places = ${placesJson};
 
     const map = L.map('map', {
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: true,
     }).setView([BONDY.latitude, BONDY.longitude], 15);
+
+    // Zoom en bas à gauche : le bandeau "Dire où aller" occupe le haut.
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -227,6 +309,38 @@ export default function MapScreen() {
           }
         }}
       />
+
+      {/* Dire un lieu -> GPS à pied direct */}
+      <Pressable
+        style={styles.voiceBar}
+        onPress={() => {
+          TtsService.instance.stop();
+          setShowVoiceDialog(true);
+        }}
+        onLongPress={() =>
+          TtsService.instance.speak(t("map_desc_say_place"))
+        }
+      >
+        <Ionicons name="mic" size={24} color={AppColors.white} />
+        <Text style={styles.voiceBarText}>{t("map_say_place")}</Text>
+      </Pressable>
+
+      {/* Voice place dialog */}
+      <Modal visible={showVoiceDialog} transparent animationType="fade">
+        <View style={styles.voiceBackdrop}>
+          <View style={styles.voiceCard}>
+            <Text style={styles.voiceTitle}>{t("map_say_place")}</Text>
+            <Text style={styles.voicePrompt}>{t("map_say_place_prompt")}</Text>
+            <VoiceInput lang={i18n.language} onResult={handleVoicePlace} />
+            <Pressable
+              style={styles.voiceCancel}
+              onPress={() => setShowVoiceDialog(false)}
+            >
+              <Text style={styles.voiceCancelText}>{t("health_cancel")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* Place detail sheet */}
       <Modal
@@ -341,6 +455,66 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  voiceBar: {
+    position: "absolute",
+    top: Spacing.md,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    backgroundColor: AppColors.dark,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: 2,
+    borderColor: AppColors.white,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  voiceBarText: {
+    fontSize: FontSizes.lg,
+    fontWeight: "800",
+    color: AppColors.white,
+  },
+  voiceBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(6,16,30,0.55)",
+    padding: Spacing.xl,
+  },
+  voiceCard: {
+    backgroundColor: AppColors.white,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  voiceTitle: {
+    fontSize: FontSizes.xl,
+    fontWeight: "bold",
+    color: AppColors.text,
+  },
+  voicePrompt: {
+    fontSize: FontSizes.md,
+    color: AppColors.text,
+    textAlign: "center",
+    marginBottom: Spacing.sm,
+  },
+  voiceCancel: {
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+  },
+  voiceCancelText: {
+    fontSize: FontSizes.md,
+    color: AppColors.dark,
+    fontWeight: "700",
   },
   sheetBackdrop: {
     flex: 1,

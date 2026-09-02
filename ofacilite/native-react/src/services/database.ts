@@ -223,6 +223,19 @@ export async function addAppointment(
   return result.lastInsertRowId;
 }
 
+export async function updateAppointment(
+  id: number,
+  title: string,
+  doctorName: string,
+  scheduledAt: Date,
+): Promise<void> {
+  const database = await getDb();
+  await database.runAsync(
+    'UPDATE appointments SET title = ?, doctor_name = ?, scheduled_at = ? WHERE id = ?',
+    [title, doctorName, scheduledAt.getTime(), id],
+  );
+}
+
 export async function updateAppointmentNotificationId(id: number, notificationId: string): Promise<void> {
   const database = await getDb();
   await database.runAsync(

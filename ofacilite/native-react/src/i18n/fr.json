@@ -192,5 +192,11 @@
   "health_med_times": "Heures de prise :",
   "health_med_remaining": "Reste {{days}} jour(s)",
   "health_med_finished": "Terminé",
-  "document_too_slow": "C’est trop long. Réessayez avec une photo plus nette, ou un fichier plus petit."
+  "document_too_slow": "C’est trop long. Réessayez avec une photo plus nette, ou un fichier plus petit.",
+  "health_edit_appointment": "Modifier le rendez-vous",
+  "map_say_place": "Dire où aller",
+  "map_desc_say_place": "Appuyez, dites le nom d’un lieu, je lance le GPS à pied.",
+  "map_say_place_prompt": "Dites le nom d’un lieu, ou : mairie, aide sociale, banque alimentaire.",
+  "map_guiding": "Je vous guide à pied vers {{name}}.",
+  "map_place_not_found": "Je n’ai pas trouvé ce lieu. Réessayez."
 }

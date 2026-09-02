@@ -190,5 +190,11 @@
   "health_med_times": "Intake times:",
   "health_med_remaining": "{{days}} day(s) remaining",
   "health_med_finished": "Finished",
-  "document_too_slow": "It is taking too long. Try again with a clearer photo, or a smaller file."
+  "document_too_slow": "It is taking too long. Try again with a clearer photo, or a smaller file.",
+  "health_edit_appointment": "Edit appointment",
+  "map_say_place": "Say where to go",
+  "map_desc_say_place": "Tap, say the name of a place, I start walking directions.",
+  "map_say_place_prompt": "Say the name of a place, or: town hall, social services, food bank.",
+  "map_guiding": "Guiding you on foot to {{name}}.",
+  "map_place_not_found": "I couldn’t find that place. Try again."
 }

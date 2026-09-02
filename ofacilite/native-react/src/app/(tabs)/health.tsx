@@ -32,6 +32,7 @@ import {
     getMedicationsWithTimes,
     getUpcomingAppointments,
     MedicationWithTimes,
+    updateAppointment,
     updateAppointmentNotificationId,
     updateMedicationNotificationId,
     updateMedication,
@@ -290,6 +291,7 @@ export default function HealthScreen() {
   const [medFrequency, setMedFrequency] = useState("");
   const [medDuration, setMedDuration] = useState("");
   const [medPhoto, setMedPhoto] = useState<string | null>(null);
+  const [editingApptId, setEditingApptId] = useState<number | null>(null);
   const [apptReason, setApptReason] = useState("");
   const [apptDoctor, setApptDoctor] = useState("");
   const [apptDate, setApptDate] = useState<Date>(new Date());
@@ -379,6 +381,7 @@ export default function HealthScreen() {
   }, [showApptVoice, apptVoiceStep, t]);
 
   const startApptVoice = () => {
+    setEditingApptId(null);
     setApptReason("");
     setApptDoctor("");
     setApptDate(new Date());
@@ -494,6 +497,7 @@ export default function HealthScreen() {
         setShowMedDialog(true);
       }
     } else {
+      setEditingApptId(null);
       setApptReason("");
       setApptDoctor("");
       setApptDate(new Date());
@@ -558,53 +562,54 @@ export default function HealthScreen() {
 
   // ── Appointments ──────────────────────────────────────────────────
 
-  const handleAddAppointment = async () => {
+  const handleSaveAppointment = async () => {
     if (!apptReason.trim() || !apptDoctor.trim()) return;
     setShowApptDialog(false);
 
     const dateTime = new Date(apptDate);
+    const reason = apptReason.trim();
+    const doctor = apptDoctor.trim();
+    const body = `${doctor} — ${reason}`;
 
-    const apptId = await addAppointment(
-      apptReason.trim(),
-      apptDoctor.trim(),
-      dateTime,
-      "",
-    );
-
-    const body = `${apptDoctor.trim()} — ${apptReason.trim()}`;
+    let apptId = editingApptId;
+    if (apptId) {
+      await NotificationService.instance.cancel(`appt_${apptId}_eve`);
+      await NotificationService.instance.cancel(`appt_${apptId}_soon`);
+      await NotificationService.instance.cancel(`appt_${apptId}_actual`);
+      await updateAppointment(apptId, reason, doctor, dateTime);
+    } else {
+      apptId = await addAppointment(reason, doctor, dateTime, "");
+    }
 
     // Notification veille (18h)
     const dayBefore = new Date(dateTime);
     dayBefore.setDate(dayBefore.getDate() - 1);
     dayBefore.setHours(18, 0, 0, 0);
-    const notifEve = `appt_${apptId}_eve`;
     await NotificationService.instance.scheduleOnce(
-      notifEve,
+      `appt_${apptId}_eve`,
       t("health_notif_appt_eve"),
       body,
       dayBefore,
     );
 
     // Notification 1h avant
-    const hourBefore = new Date(dateTime.getTime() - 3600000);
-    const notifSoon = `appt_${apptId}_soon`;
     await NotificationService.instance.scheduleOnce(
-      notifSoon,
+      `appt_${apptId}_soon`,
       t("health_notif_appt_soon"),
       body,
-      hourBefore,
+      new Date(dateTime.getTime() - 3600000),
     );
 
     // Notification à l'heure du rendez-vous
-    const notifActual = `appt_${apptId}_actual`;
     await NotificationService.instance.scheduleOnce(
-      notifActual,
+      `appt_${apptId}_actual`,
       t("health_notif_appt_actual"),
       body,
       dateTime,
     );
 
     await updateAppointmentNotificationId(apptId, `appt_${apptId}`);
+    setEditingApptId(null);
     setApptReason("");
     setApptDoctor("");
     setApptDate(new Date());
@@ -725,6 +730,13 @@ export default function HealthScreen() {
           onSwipeableOpen={() => handleDeleteAppointment(item)}
         >
           <Pressable
+            onPress={() => {
+              setEditingApptId(item.id);
+              setApptReason(item.title);
+              setApptDoctor(item.doctorName);
+              setApptDate(new Date(item.scheduledAt));
+              setShowApptDialog(true);
+            }}
             onLongPress={() =>
               TtsService.instance.speak(
                 t("health_desc_appt", {
@@ -896,6 +908,10 @@ export default function HealthScreen() {
                 setMedPhoto(null);
                 setShowMedDialog(true);
               } else {
+                setEditingApptId(null);
+                setApptReason("");
+                setApptDoctor("");
+                setApptDate(new Date());
                 setShowApptDialog(true);
               }
             }}
@@ -1069,12 +1085,14 @@ export default function HealthScreen() {
           </View>
         </Modal>
 
-        {/* Add Appointment Dialog */}
+        {/* Add / Edit Appointment Dialog */}
         <Modal visible={showApptDialog} transparent animationType="fade">
           <View style={styles.dialogBackdrop}>
             <View style={styles.dialog}>
               <Text style={styles.dialogTitle}>
-                {t("health_add_appointment")}
+                {editingApptId
+                  ? t("health_edit_appointment")
+                  : t("health_add_appointment")}
               </Text>
               <TextInput
                 style={styles.input}
@@ -1224,12 +1242,17 @@ export default function HealthScreen() {
                 />
               )}
               <View style={styles.dialogActions}>
-                <Pressable onPress={() => setShowApptDialog(false)}>
+                <Pressable
+                  onPress={() => {
+                    setShowApptDialog(false);
+                    setEditingApptId(null);
+                  }}
+                >
                   <Text style={styles.cancelText}>{t("health_cancel")}</Text>
                 </Pressable>
                 <Pressable
                   style={styles.saveButton}
-                  onPress={handleAddAppointment}
+                  onPress={handleSaveAppointment}
                 >
                   <Text style={styles.saveButtonText}>{t("health_save")}</Text>
                 </Pressable>

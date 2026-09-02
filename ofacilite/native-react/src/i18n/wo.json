@@ -190,5 +190,11 @@
   "health_med_times": "Waxtuy jël:",
   "health_med_remaining": "Des na {{days}} fan",
   "health_med_finished": "Jeex na",
-  "document_too_slow": "Yàgg na lool. Jéematal ak nataal bu leer, walla fiise bu tuuti."
+  "document_too_slow": "Yàgg na lool. Jéematal ak nataal bu leer, walla fiise bu tuuti.",
+  "health_edit_appointment": "Soppi randevu bi",
+  "map_say_place": "Wax fu ngay dem",
+  "map_desc_say_place": "Lálal, wax tur wu bérab, dinaa tambali GPS ci tànk.",
+  "map_say_place_prompt": "Wax tur wu bérab, walla : meri, ndimbal social, bank alimentaire.",
+  "map_guiding": "Maa ngi la jiite ci tànk ba {{name}}.",
+  "map_place_not_found": "Gisuma bérab boobu. Jéematal."
 }
