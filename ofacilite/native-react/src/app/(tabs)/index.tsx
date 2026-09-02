@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,11 +11,12 @@ import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
 
+// Visite guidée : mêmes entrées que la grille, dans l'ordre.
 const DISCOVERY_KEYS = [
-  "home_desc_document",
-  "home_desc_contacts",
+  "home_desc_understand",
+  "home_desc_call",
   "home_desc_health",
-  "home_desc_map",
+  "home_desc_findhelp",
 ] as const;
 
 export default function HomeScreen() {
@@ -27,12 +28,12 @@ export default function HomeScreen() {
     null,
   );
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
+  const [muted, setMuted] = useState(TtsService.instance.muted);
 
   const discoveryCancelled = useRef(false);
 
   useAutoTTS("home_question");
 
-  // Discovery mode — visite guidée avec highlight glissant
   const startDiscovery = useCallback(async () => {
     if (isDiscovering) return;
     await TtsService.instance.stop();
@@ -107,15 +108,38 @@ export default function HomeScreen() {
             <Text style={styles.brandName}>{t("home_title")}</Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable onPress={isDiscovering ? stopDiscovery : startDiscovery}>
+            <Pressable
+              onPress={() => {
+                const next = !muted;
+                setMuted(next);
+                discoveryCancelled.current = true;
+                setIsDiscovering(false);
+                setHighlightedButton(null);
+                TtsService.instance.setMuted(next);
+                if (!next) {
+                  setTimeout(
+                    () => TtsService.instance.speak(t("home_question")),
+                    300,
+                  );
+                }
+              }}
+              hitSlop={8}
+            >
+              <Ionicons
+                name={muted ? "volume-mute" : "volume-high"}
+                size={28}
+                color={muted ? AppColors.red : AppColors.dark}
+              />
+            </Pressable>
+            <Pressable
+              onPress={isDiscovering ? stopDiscovery : startDiscovery}
+              hitSlop={8}
+            >
               <Ionicons
                 name={isDiscovering ? "stop-circle" : "megaphone"}
                 size={28}
                 color={isDiscovering ? AppColors.red : AppColors.dark}
               />
-            </Pressable>
-            <Pressable onPress={() => navigateTo("/help")}>
-              <Ionicons name="hand-left" size={28} color={AppColors.dark} />
             </Pressable>
             <Pressable
               onPress={() => {
@@ -125,30 +149,31 @@ export default function HomeScreen() {
                 setHighlightedButton(null);
                 setShowLanguageSheet(true);
               }}
+              hitSlop={8}
             >
               <Ionicons name="language" size={28} color={AppColors.dark} />
             </Pressable>
           </View>
         </View>
 
-        {/* 4 Big Buttons Grid */}
+        {/* Grid — même ordre / mêmes icônes que la barre d'onglets */}
         <View style={styles.grid}>
           <View style={styles.row}>
             <BigButton
-              icon="document-text"
-              label={t("home_document")}
+              icon="chatbubble-ellipses"
+              label={t("home_understand")}
               color={AppColors.dark}
               isHighlighted={highlightedButton === 0}
               onPress={() => navigateTo("/document")}
-              onLongPress={() => speakButton(0, "home_desc_document")}
+              onLongPress={() => speakButton(0, "home_desc_understand")}
             />
             <BigButton
-              icon="people"
-              label={t("home_contacts")}
+              icon="call"
+              label={t("home_call")}
               color={AppColors.dark}
               isHighlighted={highlightedButton === 1}
               onPress={() => navigateTo("/contacts")}
-              onLongPress={() => speakButton(1, "home_desc_contacts")}
+              onLongPress={() => speakButton(1, "home_desc_call")}
             />
           </View>
           <View style={styles.row}>
@@ -161,12 +186,12 @@ export default function HomeScreen() {
               onLongPress={() => speakButton(2, "home_desc_health")}
             />
             <BigButton
-              icon="map"
-              label={t("home_map")}
+              icon="location"
+              label={t("home_findhelp")}
               color={AppColors.dark}
               isHighlighted={highlightedButton === 3}
               onPress={() => navigateTo("/map")}
-              onLongPress={() => speakButton(3, "home_desc_map")}
+              onLongPress={() => speakButton(3, "home_desc_findhelp")}
             />
           </View>
         </View>
@@ -234,17 +259,17 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.lg,
     backgroundColor: "rgba(255,255,255,0.65)",
     borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
   },
   grid: {
     flex: 1,
-    paddingBottom: Spacing.xl,
     paddingTop: Spacing.sm,
-    gap: Spacing.xl,
+    paddingBottom: Spacing.xl,
+    gap: Spacing.lg,
   },
   row: {
     flex: 1,

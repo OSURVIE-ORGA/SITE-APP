@@ -6,6 +6,7 @@ import {
   Body,
   Controller,
   Post,
+  Query,
   UnsupportedMediaTypeException,
   UploadedFile,
   UseInterceptors,
@@ -15,17 +16,19 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { assertPublicHttpUrl } from '../../common/net/ssrf.util';
 import {
+  ALLOWED_DOC_MIME,
   ALLOWED_IMAGE_MIME,
   extensionForMime,
+  sniffDocMime,
   sniffImageMime,
 } from '../../common/upload/image-file.util';
 import { UPLOAD_DIR } from '../uploads/uploads-reaper.service';
 import { AnalyzeImageUrlDto } from './dto/analyze-image-url.dto';
 import { AskDto } from './dto/ask.dto';
+import { ParseContactDto } from './dto/parse-contact.dto';
 import { MistralService } from './mistral.service';
 
 const MAX_UPLOAD_BYTES = (Number(process.env.MAX_UPLOAD_MB) || 8) * 1024 * 1024;
-
 
 const imageUpload = FileInterceptor('file', {
   storage: memoryStorage(),
@@ -38,6 +41,18 @@ const imageUpload = FileInterceptor('file', {
         new UnsupportedMediaTypeException('Only JPEG/PNG/WebP/HEIC images'),
         false,
       );
+    }
+  },
+});
+
+const documentUpload = FileInterceptor('file', {
+  storage: memoryStorage(),
+  limits: { files: 1, fileSize: MAX_UPLOAD_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if ((ALLOWED_DOC_MIME as readonly string[]).includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new UnsupportedMediaTypeException('Only images or PDF'), false);
     }
   },
 });
@@ -57,7 +72,36 @@ export class MistralController {
 
   @Post('ask')
   async ask(@Body() dto: AskDto) {
-    return this.mistral.ask(dto.question);
+    return this.mistral.ask(dto.question, dto.language, dto.history);
+  }
+
+  @Post('parse-contact')
+  async parseContact(@Body() dto: ParseContactDto) {
+    const extracted = await this.mistral.contactFromText(dto.text);
+    return {
+      success: true,
+      name: extracted.name,
+      phone: extracted.phone,
+    };
+  }
+
+  @Post('read-document')
+  @UseInterceptors(documentUpload)
+  async readDocument(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Query('language') language?: string,
+  ) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException("Aucun fichier n'a été fourni.");
+    }
+    const mime = sniffDocMime(file.buffer);
+    if (!mime) {
+      throw new UnsupportedMediaTypeException(
+        "Le fichier n'est ni une image ni un PDF.",
+      );
+    }
+    const dataUrl = `data:${mime};base64,${file.buffer.toString('base64')}`;
+    return this.mistral.readDocument(dataUrl, mime, language);
   }
 
   @Post('scan-photo')

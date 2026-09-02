@@ -18,11 +18,85 @@ import {
 import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
 
 import AccessibleButton from "@/components/accessible-button";
+import VoiceInput from "@/components/voice-input";
 import { AppColors, BorderRadius, BorderColor, FontSizes, MutedColor, Spacing } from "@/constants/theme";
-import { addContact, AppContact, deleteContact, getContacts, updateContactPhoto } from "@/services/database";
+import { addContact, AppContact, deleteContact, getContacts, updateContact, updateContactPhoto } from "@/services/database";
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
 import ApiService from "@/services/api-service";
+
+/**
+ * minuscules, sans diacritiques (accents latins ET harakat arabes), sans
+ * ponctuation, variantes de lettres arabes unifiées. Garde tous les alphabets
+ * (latin, arabe, bengali, tamoul…), pas seulement a-z.
+ */
+function normalizeText(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/[ىي]/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ـ/g, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Mots à ignorer autour du nom ("appelle …", "اتصل بـ …", "call …").
+const CALL_FILLERS = new Set([
+  // français
+  "appelle", "appeler", "appelles", "appel", "appelez", "rappelle", "rappeler",
+  "telephone", "telephoner", "contacte", "contacter", "joindre",
+  "cette", "cet", "ce", "personne", "quelquun", "numero",
+  "a", "au", "aux", "le", "la", "les", "de", "du", "des",
+  "mon", "ma", "mes", "il", "faut", "s", "veux", "je", "stp", "svp",
+  // english
+  "call", "phone", "dial", "ring", "please", "the", "to",
+  // arabe (après normalisation)
+  "اتصل", "اتصلي", "اطلب", "كلم", "هاتف", "ب", "بـ", "على", "ال", "الي",
+  "من", "هذا", "هذه", "الشخص", "شخص", "رقم",
+]);
+
+/** Retrouve le contact dont le nom colle le mieux à ce qui a été dit. */
+function findContactByName(
+  spoken: string,
+  contacts: AppContact[],
+): AppContact | null {
+  const words = normalizeText(spoken)
+    .split(" ")
+    .filter((w) => w && !CALL_FILLERS.has(w));
+  if (!words.length) return null;
+
+  const q = words.join(" ");
+  // En arabe les proclitiques (بـ، الـ، لـ…) collent au mot : on essaie aussi
+  // le mot débarrassé de son préfixe.
+  const tokens = words.flatMap((w) => {
+    const m = w.match(/^(?:ال|و|ف|ب|ك|ل)(\p{L}{2,})$/u);
+    return m ? [w, m[1]] : [w];
+  });
+
+  let best: { c: AppContact; score: number } | null = null;
+  for (const c of contacts) {
+    const name = normalizeText(c.name);
+    const nameTokens = name.split(" ");
+    let score = 0;
+    if (name === q) score = 100;
+    else if (name.startsWith(q) || q.startsWith(name)) score = 80;
+    else if (name.includes(q) || q.includes(name)) score = 70;
+    else {
+      const shared = nameTokens.filter((nt) =>
+        tokens.some(
+          (qt) => nt === qt || nt.includes(qt) || qt.includes(nt),
+        ),
+      ).length;
+      score = shared * 25;
+    }
+    if (score > 0 && (!best || score > best.score)) best = { c, score };
+  }
+  return best && best.score >= 25 ? best.c : null;
+}
 
 export default function ContactsScreen() {
   const { t, i18n } = useTranslation();
@@ -35,6 +109,9 @@ export default function ContactsScreen() {
   const [newPhone, setNewPhone] = useState("");
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showVoiceDialog, setShowVoiceDialog] = useState(false);
+  const [showCallVoiceDialog, setShowCallVoiceDialog] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [phoneContacts, setPhoneContacts] = useState<Contacts.ExistingContact[]>([]);
 
   useAutoTTS("contacts_tts_intro");
@@ -76,15 +153,54 @@ export default function ContactsScreen() {
     setShowImportDialog(false);
   };
 
-  const handleAddContact = async () => {
-    if (!newName.trim() || !newPhone.trim()) return;
-    const id = Date.now().toString();
-    await addContact(id, newName.trim(), newPhone.trim(), newPhoto);
+  const resetForm = () => {
+    setEditingId(null);
     setNewName("");
     setNewPhone("");
     setNewPhoto(null);
+  };
+
+  const openAdd = () => {
+    resetForm();
+    setShowAddDialog(true);
+  };
+
+  const openEdit = useCallback((contact: AppContact) => {
+    setEditingId(contact.id);
+    setNewName(contact.name);
+    setNewPhone(contact.phone);
+    setNewPhoto(contact.photoPath ?? null);
+    setShowAddDialog(true);
+  }, []);
+
+  const handleSaveContact = async () => {
+    if (!newName.trim() || !newPhone.trim()) return;
+    if (editingId) {
+      await updateContact(editingId, newName.trim(), newPhone.trim(), newPhoto);
+    } else {
+      await addContact(
+        Date.now().toString(),
+        newName.trim(),
+        newPhone.trim(),
+        newPhoto,
+      );
+    }
     setShowAddDialog(false);
+    resetForm();
     await loadContacts();
+  };
+
+  // Appel à la voix : « Appelle Marie » -> retrouve le contact et compose.
+  const handleCallByVoice = async (transcript: string) => {
+    setShowCallVoiceDialog(false);
+    const match = findContactByName(transcript, contacts);
+    await TtsService.instance.stop();
+    if (match) {
+      await TtsService.instance.speak(t("contacts_calling", { name: match.name }));
+      Linking.openURL(`tel:${match.phone}`);
+    } else {
+      await TtsService.instance.speak(t("contacts_call_not_found"));
+    }
   };
 
   const pickPhoto = async (forNewContact = false, contactId?: string) => {
@@ -126,7 +242,9 @@ export default function ContactsScreen() {
           rawPhone = "0" + rawPhone.slice(3);
         }
         setNewPhone(rawPhone.replace(/\+/g, "").trim());
-        setNewPhoto(scanResult.photoUrl || uri);
+        // Local file URI, not scanResult.photoUrl: the API deletes the uploaded
+        // copy after a day, so the remote URL would stop resolving.
+        setNewPhoto(uri);
       } else {
         setNewName("");
         setNewPhone("");
@@ -139,6 +257,34 @@ export default function ContactsScreen() {
       setNewPhone("");
       setNewPhoto(uri);
     } finally {
+      setIsScanning(false);
+      setShowAddDialog(true);
+    }
+  };
+
+  // Ajout par la voix : « Marie Dupont, zéro six douze… » -> nom + numéro.
+  const handleVoiceContact = async (transcript: string) => {
+    setShowVoiceDialog(false);
+    if (!transcript.trim()) return;
+    setIsScanning(true);
+    try {
+      const parsed = await ApiService.instance.parseContactFromSpeech(transcript);
+      if (parsed && parsed.success && (parsed.name || parsed.phone)) {
+        setNewName(parsed.name || "");
+        let rawPhone = parsed.phone || "";
+        if (rawPhone.startsWith("+33")) rawPhone = "0" + rawPhone.slice(3);
+        setNewPhone(rawPhone.replace(/\D/g, ""));
+      } else {
+        // Repli : on met la phrase entendue dans le nom, à corriger à la main.
+        setNewName(transcript);
+        setNewPhone("");
+      }
+    } catch (err) {
+      console.warn("Error parsing voice contact:", err);
+      setNewName(transcript);
+      setNewPhone("");
+    } finally {
+      setNewPhoto(null);
       setIsScanning(false);
       setShowAddDialog(true);
     }
@@ -180,10 +326,8 @@ export default function ContactsScreen() {
           >
             <View style={styles.contactRow}>
               <AccessibleButton
-                description={t("contacts_desc_edit_photo", {
-                  name: item.name,
-                })}
-                onTap={() => pickPhoto(false, item.id)}
+                description={t("contacts_edit_title")}
+                onTap={() => openEdit(item)}
               >
                 <View>
                   {avatarUri ? (
@@ -217,7 +361,7 @@ export default function ContactsScreen() {
         </Swipeable>
       );
     },
-    [t, callContact, pickPhoto],
+    [t, callContact, openEdit],
   );
 
   if (loading) {
@@ -231,6 +375,20 @@ export default function ContactsScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
+        {contacts.length > 0 && (
+          <AccessibleButton
+            description={t("contacts_desc_call_by_voice")}
+            onTap={() => setShowCallVoiceDialog(true)}
+          >
+            <View style={styles.callVoiceBtn}>
+              <Ionicons name="mic" size={26} color={AppColors.white} />
+              <Text style={styles.callVoiceBtnText}>
+                {t("contacts_call_by_voice")}
+              </Text>
+            </View>
+          </AccessibleButton>
+        )}
+
         {contacts.length === 0 ? (
           <View style={styles.centerContainer}>
             <Text style={styles.emptyText}>{t("contacts_empty")}</Text>
@@ -247,6 +405,15 @@ export default function ContactsScreen() {
 
         <View style={styles.fabContainer}>
           <AccessibleButton
+            description={t("contacts_desc_voice")}
+            onTap={() => setShowVoiceDialog(true)}
+          >
+            <View style={styles.voiceFab}>
+              <Ionicons name="mic" size={26} color={AppColors.white} />
+            </View>
+          </AccessibleButton>
+
+          <AccessibleButton
             description={t("contacts_desc_scan")}
             onTap={takePhotoAndScan}
           >
@@ -257,7 +424,7 @@ export default function ContactsScreen() {
 
           <AccessibleButton
             description={t("contacts_desc_add_contact")}
-            onTap={() => setShowAddDialog(true)}
+            onTap={openAdd}
           >
             <View style={styles.fab}>
               <Ionicons name="add" size={36} color={AppColors.dark} />
@@ -265,19 +432,25 @@ export default function ContactsScreen() {
           </AccessibleButton>
         </View>
 
-        {/* Add Contact Modal */}
+        {/* Add / Edit Contact Modal */}
         <Modal visible={showAddDialog} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{t("contacts_add_title")}</Text>
+              <Text style={styles.modalTitle}>
+                {editingId ? t("contacts_edit_title") : t("contacts_add_title")}
+              </Text>
 
-              <Pressable
-                style={styles.importButton}
-                onPress={handleImportFromPhone}
-              >
-                <Ionicons name="download" size={24} color={AppColors.white} />
-                <Text style={styles.importButtonText}>{t("contacts_import")}</Text>
-              </Pressable>
+              {!editingId && (
+                <Pressable
+                  style={styles.importButton}
+                  onPress={handleImportFromPhone}
+                >
+                  <Ionicons name="download" size={24} color={AppColors.white} />
+                  <Text style={styles.importButtonText}>
+                    {t("contacts_import")}
+                  </Text>
+                </Pressable>
+              )}
 
               <Pressable
                 style={styles.newPhotoContainer}
@@ -315,7 +488,10 @@ export default function ContactsScreen() {
               <View style={styles.modalActions}>
                 <Pressable
                   style={styles.modalButtonCancel}
-                  onPress={() => setShowAddDialog(false)}
+                  onPress={() => {
+                    setShowAddDialog(false);
+                    resetForm();
+                  }}
                 >
                   <Text style={styles.modalButtonCancelText}>
                     {t("health_cancel")}
@@ -323,7 +499,7 @@ export default function ContactsScreen() {
                 </Pressable>
                 <Pressable
                   style={styles.modalButtonSave}
-                  onPress={handleAddContact}
+                  onPress={handleSaveContact}
                 >
                   <Text style={styles.modalButtonSaveText}>
                     {t("health_save")}
@@ -367,13 +543,81 @@ export default function ContactsScreen() {
           </View>
         </Modal>
 
-        {/* Scanning Loading Modal */}
+        {/* Voice Add Modal */}
+        <Modal visible={showVoiceDialog} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { alignItems: "center" }]}>
+              <Text style={styles.modalTitle}>{t("contacts_add_title")}</Text>
+              <Text
+                style={{
+                  fontSize: FontSizes.md,
+                  color: AppColors.text,
+                  textAlign: "center",
+                  marginBottom: Spacing.md,
+                }}
+              >
+                {t("contacts_voice_listening")}
+              </Text>
+
+              <VoiceInput
+                lang={i18n.language}
+                onResult={handleVoiceContact}
+              />
+
+              <Pressable
+                style={[styles.modalButtonCancel, { marginTop: Spacing.md }]}
+                onPress={() => setShowVoiceDialog(false)}
+              >
+                <Text style={styles.modalButtonCancelText}>
+                  {t("health_cancel")}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Call by Voice Modal */}
+        <Modal visible={showCallVoiceDialog} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { alignItems: "center" }]}>
+              <Text style={styles.modalTitle}>
+                {t("contacts_call_by_voice")}
+              </Text>
+              <Text
+                style={{
+                  fontSize: FontSizes.md,
+                  color: AppColors.text,
+                  textAlign: "center",
+                  marginBottom: Spacing.md,
+                }}
+              >
+                {t("contacts_say_who_to_call")}
+              </Text>
+
+              <VoiceInput
+                lang={i18n.language}
+                onResult={handleCallByVoice}
+              />
+
+              <Pressable
+                style={[styles.modalButtonCancel, { marginTop: Spacing.md }]}
+                onPress={() => setShowCallVoiceDialog(false)}
+              >
+                <Text style={styles.modalButtonCancelText}>
+                  {t("health_cancel")}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Scanning / Parsing Loading Modal */}
         <Modal visible={isScanning} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { alignItems: 'center', padding: Spacing.xl }]}>
               <ActivityIndicator size="large" color={AppColors.primary} />
               <Text style={{ marginTop: Spacing.lg, fontSize: FontSizes.md, fontWeight: 'bold', textAlign: 'center', color: AppColors.dark }}>
-                Analyse de la photo et extraction du contact par l'IA...
+                {t("document_analyzing")}
               </Text>
             </View>
           </View>
@@ -389,6 +633,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppColors.cream,
+  },
+  callVoiceBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    backgroundColor: AppColors.dark,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.xl,
+    minHeight: 60,
+  },
+  callVoiceBtnText: {
+    fontSize: FontSizes.lg,
+    fontWeight: "800",
+    color: AppColors.white,
   },
   centerContainer: {
     flex: 1,
@@ -499,6 +761,19 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   scanFab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: AppColors.dark,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: AppColors.dark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  voiceFab: {
     width: 56,
     height: 56,
     borderRadius: 28,

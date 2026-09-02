@@ -104,6 +104,19 @@ export async function updateContactPhoto(id: string, photoPath: string): Promise
   );
 }
 
+export async function updateContact(
+  id: string,
+  name: string,
+  phone: string,
+  photoPath: string | null,
+): Promise<void> {
+  const database = await getDb();
+  await database.runAsync(
+    'UPDATE contacts SET name = ?, phone = ?, photo_path = ? WHERE id = ?',
+    [name, phone, photoPath, id],
+  );
+}
+
 export async function deleteContact(id: string): Promise<void> {
   const database = await getDb();
   await database.runAsync('DELETE FROM contacts WHERE id = ?', [id]);

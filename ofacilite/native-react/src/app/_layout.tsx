@@ -64,6 +64,13 @@ export default function RootLayout() {
             animation: "fade",
           }}
         />
+        <Stack.Screen
+          name="emergency"
+          options={{
+            presentation: "fullScreenModal",
+            animation: "fade",
+          }}
+        />
       </Stack>
     </I18nextProvider>
   );

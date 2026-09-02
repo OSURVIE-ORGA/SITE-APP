@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
 
@@ -18,12 +23,42 @@ export interface MedicationExtraction {
 
 @Injectable()
 export class MistralService {
+  private readonly logger = new Logger(MistralService.name);
   private readonly client: Mistral;
 
   constructor(config: ConfigService) {
     this.client = new Mistral({
       apiKey: config.getOrThrow<string>('MISTRAL_API_KEY'),
     });
+  }
+
+  /**
+   * One chat completion, returning the reply text. Any transport / upstream
+   * failure (bad key, quota, Mistral outage) is turned into a clean 502 instead
+   * of a raw SDK stack trace.
+   */
+  private async complete(
+    messages: Parameters<Mistral['chat']['complete']>[0]['messages'],
+  ): Promise<string> {
+    let content: unknown;
+    try {
+      const response = await this.client.chat.complete({
+        model: MODEL,
+        messages,
+      });
+      content = response.choices?.[0]?.message?.content;
+    } catch (err) {
+      this.logger.error(
+        `Mistral call failed: ${(err as Error).message ?? String(err)}`,
+      );
+      throw new BadGatewayException(
+        'Le service IA est momentanément indisponible.',
+      );
+    }
+    if (!content) {
+      throw new NotFoundException('Aucune réponse de Mistral');
+    }
+    return typeof content === 'string' ? content : JSON.stringify(content);
   }
 
   async contactFromBuffer(
@@ -68,46 +103,89 @@ export class MistralService {
   }
 
   /** Free-text question -> plain-text answer. Backs POST /mistral/ask. */
-  async ask(question: string): Promise<{ answer: string }> {
-    const response = await this.client.chat.complete({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: this.askSystemPrompt },
-        { role: 'user', content: question },
-      ],
-    });
-    const content = response.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new NotFoundException('Aucune réponse de Mistral');
-    }
-    return {
-      answer: typeof content === 'string' ? content : JSON.stringify(content),
-    };
+  async ask(
+    question: string,
+    language?: string,
+    history?: { role: 'user' | 'assistant'; content: string }[],
+  ): Promise<{ answer: string }> {
+    const system = language
+      ? `${this.askSystemPrompt}\nRéponds impérativement dans la langue de code "${language}".`
+      : this.askSystemPrompt;
+
+    // Keep only the last few turns so follow-up questions have context without
+    // letting the prompt grow unbounded.
+    const priorTurns = (history ?? [])
+      .filter(
+        (m) =>
+          (m.role === 'user' || m.role === 'assistant') &&
+          typeof m.content === 'string' &&
+          m.content.trim().length > 0,
+      )
+      .slice(-10)
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    const answer = await this.complete([
+      { role: 'system', content: system },
+      ...priorTurns,
+      { role: 'user', content: question },
+    ] as Parameters<Mistral['chat']['complete']>[0]['messages']);
+    return { answer };
   }
 
   private toDataUrl(buffer: Buffer, mimeType: string): string {
     return `data:${mimeType};base64,${buffer.toString('base64')}`;
   }
 
+  /**
+   * Reads an uploaded document (image or PDF, as a data: URL) and returns a
+   * plain, spoken-style explanation. Backs POST /mistral/read-document.
+   */
+  async readDocument(
+    dataUrl: string,
+    mime: string,
+    language?: string,
+  ): Promise<{ answer: string }> {
+    const chunk =
+      mime === 'application/pdf'
+        ? { type: 'document_url' as const, documentUrl: dataUrl }
+        : { type: 'image_url' as const, imageUrl: dataUrl };
+    const system = language
+      ? `${this.readDocPrompt}\nRéponds impérativement dans la langue de code "${language}".`
+      : this.readDocPrompt;
+    const answer = await this.complete([
+      { role: 'system', content: system },
+      { role: 'user', content: [chunk] },
+    ] as Parameters<Mistral['chat']['complete']>[0]['messages']);
+    return { answer };
+  }
+
+  /** Voice transcript -> { name, phone } for hands-free contact entry. */
+  async contactFromText(text: string): Promise<ContactExtraction> {
+    const parsed = await this.completeToJson(
+      this.contactVoicePrompt,
+      `Transcription vocale : "${text}"`,
+      'text',
+    );
+    return {
+      name: asStringOrNull(parsed?.name),
+      phone: normalizePhone(asStringOrNull(parsed?.phone)),
+    };
+  }
+
   /** Calls the model and parses its (possibly fenced) JSON reply into a record. */
   private async completeToJson(
     systemPrompt: string,
-    image: string,
+    userMessage: string,
+    kind: 'image' | 'text' = 'image',
   ): Promise<Record<string, unknown> | null> {
-    const response = await this.client.chat.complete({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: [{ type: 'image_url', imageUrl: image }] },
-      ],
-    });
-
-    const content = response.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new NotFoundException('Aucune réponse de Mistral');
-    }
-
-    const raw = typeof content === 'string' ? content : JSON.stringify(content);
+    const userContent =
+      kind === 'image'
+        ? [{ type: 'image_url' as const, imageUrl: userMessage }]
+        : userMessage;
+    const raw = await this.complete([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userContent },
+    ] as Parameters<Mistral['chat']['complete']>[0]['messages']);
     const cleaned = raw
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/gi, '')
@@ -144,6 +222,39 @@ Règles :
 - Extrais le numéro de téléphone s'il existe.
 - Ne mets JAMAIS le signe "+" devant le numéro de téléphone. Si le numéro est au format français (+33), remplace "+33" par "0" (exemple: "0612345678").
 - Extrais le nom de la personne ou de l'entreprise s'il existe.
+- Si une valeur est absente, mets null.
+- Ne retourne aucun texte avant ou après le JSON.
+`;
+
+  private readonly readDocPrompt = `
+Tu lis un document à voix haute pour une personne qui ne sait pas bien lire
+(lettre, courrier administratif, facture, ordonnance, convocation…).
+
+Explique-le en phrases courtes et simples. Donne l'essentiel :
+- de qui vient le document,
+- ce qu'on lui demande ou ce qu'on lui annonce,
+- ce qu'elle doit faire,
+- les dates limites ou les montants importants.
+
+Ne récite pas le document mot à mot. Pas de Markdown, juste des phrases normales.
+Si tu ne vois aucun texte, dis-le simplement.
+`;
+
+  private readonly contactVoicePrompt = `
+Tu extrais un contact depuis une phrase dictée à voix haute
+(en français, en arabe, ou dans une autre langue).
+
+Retourne UNIQUEMENT un objet JSON valide :
+{
+  "name": string | null,
+  "phone": string | null
+}
+
+Règles :
+- "name" = le prénom et/ou le nom de la personne, avec une majuscule au début.
+- "phone" = le numéro de téléphone, UNIQUEMENT des chiffres, sans espaces ni "+".
+  Convertis les nombres dits en lettres en chiffres ("zéro six douze trente-quatre" -> "0612 34").
+  Un numéro français a 10 chiffres et commence par 0. Ne mets jamais "+33" : remplace-le par "0".
 - Si une valeur est absente, mets null.
 - Ne retourne aucun texte avant ou après le JSON.
 `;

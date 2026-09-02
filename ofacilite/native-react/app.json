@@ -14,9 +14,10 @@
         "NSCameraUsageDescription": "L'app a besoin de la caméra pour photographier des documents.",
         "NSPhotoLibraryUsageDescription": "L'app a besoin d'accéder à vos photos.",
         "NSLocationWhenInUseUsageDescription": "L'app a besoin de votre position pour afficher les lieux d'aide proches.",
-        "NSSpeechRecognitionUsageDescription": "L'app utilise la reconnaissance vocale pour répondre à vos questions.",
-        "NSMicrophoneUsageDescription": "L'app a besoin du micro pour la reconnaissance vocale."
-      }
+        "NSSpeechRecognitionUsageDescription": "L'app transforme votre voix en texte pour comprendre votre question.",
+        "NSMicrophoneUsageDescription": "L'app utilise le micro pour écouter votre question et y répondre."
+      },
+      "bundleIdentifier": "com.baji.keusike.ofacilite"
     },
     "android": {
       "adaptiveIcon": {
@@ -77,7 +78,17 @@
       ],
       "expo-image",
       "expo-web-browser",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "L'app utilise le micro pour écouter votre question et y répondre.",
+          "speechRecognitionPermission": "L'app transforme votre voix en texte pour comprendre votre question.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

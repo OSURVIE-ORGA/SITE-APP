@@ -66,3 +66,21 @@ export function extensionForMime(mime: AllowedImageMime): string {
       return '.heif';
   }
 }
+
+export const ALLOWED_DOC_MIME = [
+  ...ALLOWED_IMAGE_MIME,
+  'application/pdf',
+] as const;
+
+export type AllowedDocMime = (typeof ALLOWED_DOC_MIME)[number];
+
+/**
+ * Real MIME type of an uploaded document (image or PDF) from magic bytes, or
+ * null if unrecognised. Backs POST /mistral/read-document.
+ */
+export function sniffDocMime(buffer: Buffer): AllowedDocMime | null {
+  if (buffer.length >= 5 && buffer.toString('ascii', 0, 5) === '%PDF-') {
+    return 'application/pdf';
+  }
+  return sniffImageMime(buffer);
+}

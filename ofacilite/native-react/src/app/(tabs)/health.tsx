@@ -41,8 +41,229 @@ import NotificationService from "@/services/notification-service";
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
 import ApiService from "@/services/api-service";
+import VoiceInput from "@/components/voice-input";
 
 type TabName = "medications" | "appointments";
+
+type MedVoiceStep = "name" | "freq" | "dur";
+type ApptVoiceStep = "reason" | "doctor" | "day" | "time";
+
+const MED_VOICE_QUESTION: Record<MedVoiceStep, string> = {
+  name: "health_voice_ask_name",
+  freq: "health_voice_ask_frequency",
+  dur: "health_voice_ask_duration",
+};
+
+const APPT_VOICE_QUESTION: Record<ApptVoiceStep, string> = {
+  reason: "health_voice_ask_reason",
+  doctor: "health_voice_ask_doctor",
+  day: "health_voice_ask_day",
+  time: "health_voice_ask_time",
+};
+
+const NUM_WORDS: Record<string, number> = {
+  // français
+  zero: 0, un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6,
+  sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11, douze: 12, treize: 13,
+  quatorze: 14, quinze: 15, seize: 16, vingt: 20, trente: 30,
+  // anglais
+  one: 1, two: 2, three: 3, four: 4, five: 5, seven: 7, eight: 8, nine: 9,
+  ten: 10, eleven: 11, twelve: 12, once: 1, twice: 2,
+  // arabe (formes normalisées : sans harakat, alef unifié, ة→ه, ى→ي)
+  صفر: 0, واحد: 1, واحده: 1, مره: 1, اثنان: 2, اثنين: 2, مرتين: 2, ثنتين: 2,
+  ثلاثه: 3, ثلاث: 3, اربعه: 4, اربع: 4, خمسه: 5, خمس: 5, سته: 6, ست: 6,
+  سبعه: 7, سبع: 7, ثمانيه: 8, ثماني: 8, تسعه: 9, تسع: 9, عشره: 10, عشر: 10,
+  // ordinaux arabes de l'heure ("الساعة الثانية" = 2h)
+  الواحده: 1, الثانيه: 2, الثالثه: 3, الرابعه: 4, الخامسه: 5, السادسه: 6,
+  السابعه: 7, الثامنه: 8, التاسعه: 9, العاشره: 10,
+};
+
+const WEEKDAYS: Record<string, number> = {
+  dimanche: 0, lundi: 1, mardi: 2, mercredi: 3, jeudi: 4, vendredi: 5, samedi: 6,
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+  الاحد: 0, الاثنين: 1, الثلاثا: 2, الاربعا: 3, الخميس: 4, الجمعه: 5,
+  السبت: 6,
+};
+
+const MONTHS: Record<string, number> = {
+  janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6,
+  aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11,
+  january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6,
+  august: 7, september: 8, october: 9, november: 10, december: 11,
+  يناير: 0, فبراير: 1, مارس: 2, ابريل: 3, مايو: 4, يونيو: 5, يوليو: 6,
+  اغسطس: 7, سبتمبر: 8, اكتوبر: 9, نوفمبر: 10, ديسمبر: 11,
+};
+
+/** minuscules, sans diacritiques, séparateurs -> espaces, lettres arabes unifiées. */
+function normalizeNum(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/[ىي]/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[ءؤئـ]/g, "")
+    .replace(/[-_/'’.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function wordNum(w: string | undefined): number | null {
+  if (!w) return null;
+  if (/^\d+$/.test(w)) return parseInt(w, 10);
+  return Object.prototype.hasOwnProperty.call(NUM_WORDS, w) ? NUM_WORDS[w] : null;
+}
+
+/** Date dictée -> Date (à minuit). "demain", "lundi", "le 12 mars", "غدا"… */
+function parseSpokenDate(text: string, now = new Date()): Date | null {
+  const s = normalizeNum(text);
+  const base = new Date(now);
+  base.setHours(0, 0, 0, 0);
+  const plus = (n: number) => {
+    const d = new Date(base);
+    d.setDate(d.getDate() + n);
+    return d;
+  };
+
+  if (/\baujourd\b|\btoday\b|اليوم/.test(s)) return base;
+  if (/apres demain|after tomorrow|بعد غد|بعد بكره/.test(s)) return plus(2);
+  if (/\bdemain\b|\btomorrow\b|غدا|بكره/.test(s)) return plus(1);
+  if (/يومين/.test(s)) return plus(2);
+
+  const rel = s.match(/(?:dans|in|بعد)\s+([\p{L}\d]+)\s*(?:jours?|days?|ايام|يوم)/u);
+  if (rel) return plus(wordNum(rel[1]) ?? 1);
+
+  const tok = s.split(" ");
+  const hasMonth = tok.some((w) => w in MONTHS);
+  for (let i = 0; i < tok.length - 1; i++) {
+    const day = wordNum(tok[i]);
+    const mo = MONTHS[tok[i + 1]];
+    if (day != null && mo != null && day >= 1 && day <= 31) {
+      const d = new Date(base.getFullYear(), mo, day);
+      if (d < base) d.setFullYear(d.getFullYear() + 1);
+      return d;
+    }
+  }
+  for (const w of tok) {
+    const dow = WEEKDAYS[w];
+    if (dow != null) {
+      let add = (dow - base.getDay() + 7) % 7;
+      if (add === 0) add = 7;
+      return plus(add);
+    }
+  }
+  const bare = s.match(/(?:\ble\b\s*)?(\d{1,2})/);
+  if (bare && !hasMonth) {
+    const day = parseInt(bare[1], 10);
+    if (day >= 1 && day <= 31) {
+      const d = new Date(base.getFullYear(), base.getMonth(), day);
+      if (d < base) d.setMonth(d.getMonth() + 1);
+      return d;
+    }
+  }
+  return null;
+}
+
+/** Heure dictée -> {hour, minute}. "14h30", "9 heures et demie", "الساعة الثانية"… */
+function parseSpokenTime(text: string): { hour: number; minute: number } | null {
+  const s = normalizeNum(text).replace(/apres midi/g, " pm ").replace(/\s+/g, " ").trim();
+  if (/\bmidi\b|\bnoon\b|الظهر/.test(s)) return { hour: 12, minute: 0 };
+  if (/\bminuit\b|\bmidnight\b|منتصف الليل/.test(s)) return { hour: 0, minute: 0 };
+
+  let hour: number | null = null;
+  let minute = 0;
+  let m =
+    s.match(/(\d{1,2})\s*(?:h|:|heures?|hr)\s*(\d{1,2})\b/) ||
+    s.match(/(\d{1,2})\s+(\d{2})\b/);
+  if (m) {
+    hour = +m[1];
+    minute = +m[2];
+  } else {
+    m = s.match(/(\d{1,2})\s*(?:h\b|heures?|hr\b)/);
+    if (m) hour = +m[1];
+    else {
+      m = s.match(/الساعه\s+([\p{L}]+|\d{1,2})/u);
+      if (m) hour = wordNum(m[1]);
+      else {
+        const dm = s.match(/\b(\d{1,2})\b/);
+        if (dm) hour = +dm[1];
+        else
+          for (const w of s.split(" ")) {
+            const v = wordNum(w);
+            if (v != null && v >= 0 && v <= 23) {
+              hour = v;
+              break;
+            }
+          }
+      }
+    }
+  }
+  if (hour == null || isNaN(hour)) return null;
+
+  if (minute === 0) {
+    if (/et demie|et demi|half past|النصف|و نصف/.test(s)) minute = 30;
+    else if (/et quart|quarter past|و ربع|الربع/.test(s)) minute = 15;
+    else if (/moins le quart|quarter to|الا ربع/.test(s)) {
+      minute = 45;
+      hour = (hour + 23) % 24;
+    }
+  }
+  if (/du soir|\bpm\b|مساء|عصرا|ليلا|الليل/.test(s) && hour >= 1 && hour <= 11) {
+    hour += 12;
+  }
+  if (/du matin|\bam\b|صباحا|الصباح/.test(s) && hour === 12) hour = 0;
+
+  return {
+    hour: ((hour % 24) + 24) % 24,
+    minute: Math.min(59, Math.max(0, minute)),
+  };
+}
+
+/** "3" / "trois" / "٣" / "ثلاث مرات" / "deux semaines" / "شهر" -> nombre. */
+function parseSpokenNumber(input: string): number | null {
+  const ascii = input
+    .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString())
+    .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d).toString());
+  const digits = ascii.match(/\d+/);
+  if (digits) return parseInt(digits[0], 10);
+
+  const norm = normalizeNum(input);
+
+  // 1) un éventuel nombre écrit en lettres (fr / en / ar) — découpe qui GARDE
+  //    les lettres arabes (contrairement à [^a-z]).
+  let n: number | null = null;
+  for (const w of norm.replace(/[^\p{L}\p{N}]+/gu, " ").trim().split(/\s+/)) {
+    if (w && Object.prototype.hasOwnProperty.call(NUM_WORDS, w)) {
+      n = NUM_WORDS[w];
+      break;
+    }
+  }
+
+  // 2) unité de temps -> multiplicateur (français + arabe, y compris duels/pluriels)
+  if (/اسابيع|اسبوعين|اسبوع|semaines?/.test(norm)) {
+    return (n ?? (/اسبوعين/.test(norm) ? 2 : 1)) * 7;
+  }
+  if (/شهور|اشهر|شهرين|شهر|mois/.test(norm)) {
+    return (n ?? (/شهرين/.test(norm) ? 2 : 1)) * 30;
+  }
+
+  return n;
+}
+
+/** Heures de prise par défaut pour N prises / jour. */
+function defaultHours(count: number): number[] {
+  const n = Math.max(1, Math.min(6, count));
+  const table: Record<number, number[]> = {
+    1: [8],
+    2: [8, 20],
+    3: [8, 13, 20],
+    4: [8, 12, 16, 20],
+    5: [8, 12, 15, 18, 21],
+    6: [7, 11, 14, 17, 20, 23],
+  };
+  return table[n];
+}
 
 export default function HealthScreen() {
   const { t, i18n } = useTranslation();
@@ -52,6 +273,10 @@ export default function HealthScreen() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [showMedVoice, setShowMedVoice] = useState(false);
+  const [medVoiceStep, setMedVoiceStep] = useState<MedVoiceStep>("name");
+  const [showApptVoice, setShowApptVoice] = useState(false);
+  const [apptVoiceStep, setApptVoiceStep] = useState<ApptVoiceStep>("reason");
 
   // Dialog states
   const [showMedDialog, setShowMedDialog] = useState(false);
@@ -90,6 +315,122 @@ export default function HealthScreen() {
     setLoading(false);
   };
 
+  // ── Ajout d'un médicament à la voix, champ par champ ─────────────
+
+  // À chaque étape, la question est posée à voix haute.
+  useEffect(() => {
+    if (!showMedVoice) return;
+    const id = setTimeout(() => {
+      TtsService.instance.speak(t(MED_VOICE_QUESTION[medVoiceStep]));
+    }, 350);
+    return () => clearTimeout(id);
+  }, [showMedVoice, medVoiceStep, t]);
+
+  const startMedVoice = () => {
+    setEditingMedId(null);
+    setMedName("");
+    setMedFrequency("");
+    setMedDuration("");
+    setMedTimes([{ hour: 8, minute: 0 }]);
+    setMedPhoto(null);
+    setMedVoiceStep("name");
+    setShowMedVoice(true);
+  };
+
+  const handleMedVoice = (transcript: string) => {
+    const said = transcript.trim();
+    if (!said) return;
+
+    if (medVoiceStep === "name") {
+      setMedName(said);
+      setMedVoiceStep("freq");
+      return;
+    }
+
+    if (medVoiceStep === "freq") {
+      const n = parseSpokenNumber(said);
+      if (n == null || n < 1) {
+        TtsService.instance.speak(t("voice_not_understood"));
+        return;
+      }
+      const count = Math.max(1, Math.min(6, n));
+      setMedFrequency(String(count));
+      setMedTimes(defaultHours(count).map((h) => ({ hour: h, minute: 0 })));
+      setMedVoiceStep("dur");
+      return;
+    }
+
+    // dur : un nombre, ou "je ne sais pas" -> pas de durée
+    const days = parseSpokenNumber(said);
+    setMedDuration(days != null && days > 0 ? String(days) : "");
+    setShowMedVoice(false);
+    setShowMedDialog(true);
+    setTimeout(() => TtsService.instance.speak(t("health_voice_review")), 300);
+  };
+
+  // ── Ajout d'un rendez-vous à la voix, champ par champ ────────────
+
+  useEffect(() => {
+    if (!showApptVoice) return;
+    const id = setTimeout(() => {
+      TtsService.instance.speak(t(APPT_VOICE_QUESTION[apptVoiceStep]));
+    }, 350);
+    return () => clearTimeout(id);
+  }, [showApptVoice, apptVoiceStep, t]);
+
+  const startApptVoice = () => {
+    setApptReason("");
+    setApptDoctor("");
+    setApptDate(new Date());
+    setApptVoiceStep("reason");
+    setShowApptVoice(true);
+  };
+
+  const handleApptVoice = (transcript: string) => {
+    const said = transcript.trim();
+    if (!said) return;
+
+    if (apptVoiceStep === "reason") {
+      setApptReason(said);
+      setApptVoiceStep("doctor");
+      return;
+    }
+    if (apptVoiceStep === "doctor") {
+      setApptDoctor(said);
+      setApptVoiceStep("day");
+      return;
+    }
+    if (apptVoiceStep === "day") {
+      const d = parseSpokenDate(said);
+      if (!d) {
+        TtsService.instance.speak(t("voice_not_understood"));
+        return;
+      }
+      setApptDate((prev) => {
+        const next = new Date(d);
+        next.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
+        return next;
+      });
+      setApptVoiceStep("time");
+      return;
+    }
+
+    // time
+    const hm = parseSpokenTime(said);
+    if (!hm) {
+      TtsService.instance.speak(t("voice_not_understood"));
+      return;
+    }
+    setApptDate((prev) => {
+      const next = new Date(prev);
+      next.setHours(hm.hour, hm.minute, 0, 0);
+      return next;
+    });
+    setShowApptVoice(false);
+    setShowApptDialog(true);
+    setTimeout(() => TtsService.instance.speak(t("health_voice_review")), 300);
+  };
+
   // ── Scanner ──────────────────────────────────────────────────────
 
   const takePhotoAndScan = async () => {
@@ -113,7 +454,9 @@ export default function HealthScreen() {
         const scanResult = await ApiService.instance.scanMedicationPhoto(uri);
         if (scanResult && scanResult.success) {
           setMedName(scanResult.name || "");
-          setMedPhoto(scanResult.photoUrl || uri);
+          // Local file URI, not scanResult.photoUrl: the API deletes the
+          // uploaded copy after a day.
+          setMedPhoto(uri);
           if (scanResult.durationDays) {
             setMedDuration(scanResult.durationDays.toString());
           } else {
@@ -516,6 +859,19 @@ export default function HealthScreen() {
         {/* FAB */}
         <View style={styles.fabContainer}>
           <AccessibleButton
+            description={
+              activeTab === "medications"
+                ? t("health_desc_voice_add")
+                : t("health_desc_voice_appt")
+            }
+            onTap={activeTab === "medications" ? startMedVoice : startApptVoice}
+          >
+            <View style={styles.voiceFab}>
+              <Ionicons name="mic" size={26} color={AppColors.white} />
+            </View>
+          </AccessibleButton>
+
+          <AccessibleButton
             description={t("health_desc_scan")}
             onTap={takePhotoAndScan}
           >
@@ -882,13 +1238,93 @@ export default function HealthScreen() {
           </View>
         </Modal>
 
+        {/* Ajout médicament à la voix — champ par champ */}
+        <Modal visible={showMedVoice} transparent animationType="fade">
+          <View style={styles.dialogBackdrop}>
+            <View style={[styles.dialog, { alignItems: "center" }]}>
+              <Text style={styles.dialogTitle}>{t("health_add_medication")}</Text>
+              <Text
+                style={{
+                  fontSize: FontSizes.lg,
+                  fontWeight: "700",
+                  color: AppColors.text,
+                  textAlign: "center",
+                  marginBottom: Spacing.md,
+                }}
+              >
+                {t(MED_VOICE_QUESTION[medVoiceStep])}
+              </Text>
+
+              <VoiceInput lang={i18n.language} onResult={handleMedVoice} />
+
+              <Pressable
+                style={{
+                  marginTop: Spacing.md,
+                  paddingVertical: Spacing.sm,
+                  paddingHorizontal: Spacing.xl,
+                  borderRadius: BorderRadius.full,
+                  borderWidth: 1.5,
+                  borderColor: BorderColor,
+                }}
+                onPress={() => {
+                  TtsService.instance.stop();
+                  setShowMedVoice(false);
+                }}
+              >
+                <Text style={styles.cancelText}>{t("health_cancel")}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Ajout rendez-vous à la voix — champ par champ */}
+        <Modal visible={showApptVoice} transparent animationType="fade">
+          <View style={styles.dialogBackdrop}>
+            <View style={[styles.dialog, { alignItems: "center" }]}>
+              <Text style={styles.dialogTitle}>
+                {t("health_add_appointment")}
+              </Text>
+              <Text
+                style={{
+                  fontSize: FontSizes.lg,
+                  fontWeight: "700",
+                  color: AppColors.text,
+                  textAlign: "center",
+                  marginBottom: Spacing.md,
+                }}
+              >
+                {t(APPT_VOICE_QUESTION[apptVoiceStep])}
+              </Text>
+
+              <VoiceInput lang={i18n.language} onResult={handleApptVoice} />
+
+              <Pressable
+                style={{
+                  marginTop: Spacing.md,
+                  paddingVertical: Spacing.sm,
+                  paddingHorizontal: Spacing.xl,
+                  borderRadius: BorderRadius.full,
+                  borderWidth: 1.5,
+                  borderColor: BorderColor,
+                }}
+                onPress={() => {
+                  TtsService.instance.stop();
+                  setShowApptVoice(false);
+                }}
+              >
+                <Text style={styles.cancelText}>{t("health_cancel")}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
         {/* Scanning Loading Modal */}
         <Modal visible={isScanning} transparent animationType="fade">
           <View style={styles.dialogBackdrop}>
             <View style={[styles.dialog, { alignItems: 'center', padding: Spacing.xl }]}>
               <ActivityIndicator size="large" color={AppColors.primary} />
               <Text style={{ marginTop: Spacing.lg, fontSize: FontSizes.md, fontWeight: 'bold', textAlign: 'center', color: AppColors.text }}>
-                Analyse de la boîte de médicament par l'IA...
+                {t("document_analyzing")}
               </Text>
             </View>
           </View>
@@ -1045,6 +1481,19 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   scanFab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: AppColors.dark,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  voiceFab: {
     width: 56,
     height: 56,
     borderRadius: 28,

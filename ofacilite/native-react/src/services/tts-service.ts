@@ -9,7 +9,20 @@ class TtsService {
   private static _instance: TtsService;
   private _language = 'fr-FR';
   private _isPaused = false;
+  private _muted = false;
   private _lastSpokenText: string | null = null;
+
+  /** Coupe / réactive toute la synthèse vocale de l'app. */
+  setMuted(muted: boolean): void {
+    this._muted = muted;
+    if (muted) {
+      void this.stop();
+    }
+  }
+
+  get muted(): boolean {
+    return this._muted;
+  }
 
   static get instance(): TtsService {
     if (!TtsService._instance) {
@@ -37,6 +50,7 @@ class TtsService {
 
   /** Parle un texte, en arrêtant d'abord tout TTS en cours */
   async speak(text: string): Promise<void> {
+    if (this._muted) return;
     await this.stop();
     this._lastSpokenText = text;
     this._isPaused = false;
