@@ -1,0 +1,30 @@
+# Reverse proxy + automatic HTTPS.
+#
+# SITE_HOST and ACME_EMAIL come from .env.production (docker-compose passes them
+# in). With a domainless VPS, SITE_HOST is the sslip.io name that resolves to
+# the server's public IP, e.g. 92-222-70-138.sslip.io — Caddy then obtains and
+# renews a real Let's Encrypt certificate for it on its own.
+{
+	email {$ACME_EMAIL}
+}
+
+{$SITE_HOST} {
+	encode zstd gzip
+
+	# Keep uploads bounded at the edge too (app enforces MAX_UPLOAD_MB).
+	request_body {
+		max_size 10MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		-Server
+	}
+
+	reverse_proxy api:3000 {
+		header_up X-Forwarded-Proto https
+	}
+}

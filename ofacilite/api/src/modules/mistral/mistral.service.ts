@@ -2,110 +2,132 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
 
+const MODEL = 'mistral-small-latest';
+
+export interface ContactExtraction {
+  name: string | null;
+  phone: string | null;
+}
+
+export interface MedicationExtraction {
+  name: string | null;
+  frequency: number | null;
+  durationDays: number | null;
+  suggestedHours: number[] | null;
+}
+
 @Injectable()
 export class MistralService {
-  private client: Mistral;
+  private readonly client: Mistral;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(config: ConfigService) {
     this.client = new Mistral({
-      apiKey: this.config.get<string>('MISTRAL_API_KEY') ?? '',
+      apiKey: config.getOrThrow<string>('MISTRAL_API_KEY'),
     });
   }
 
-  async contactFromBuffer(buffer: Buffer, mimeType: string = 'image/jpeg') {
-    const base64Image = buffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64Image}`;
-    return this.contactFromImage(dataUrl);
+  async contactFromBuffer(
+    buffer: Buffer,
+    mimeType = 'image/jpeg',
+  ): Promise<ContactExtraction> {
+    return this.contactFromImage(this.toDataUrl(buffer, mimeType));
   }
 
-  async contactFromImage(image: string) {
+  async contactFromImage(image: string): Promise<ContactExtraction> {
+    const parsed = await this.completeToJson(this.systemPrompt, image);
+    return {
+      name: asStringOrNull(parsed?.name),
+      phone: normalizePhone(asStringOrNull(parsed?.phone)),
+    };
+  }
+
+  async medicationFromBuffer(
+    buffer: Buffer,
+    mimeType = 'image/jpeg',
+  ): Promise<MedicationExtraction> {
+    return this.medicationFromImage(this.toDataUrl(buffer, mimeType));
+  }
+
+  async medicationFromImage(image: string): Promise<MedicationExtraction> {
+    const parsed = await this.completeToJson(
+      this.medicationSystemPrompt,
+      image,
+    );
+    const rawHours = parsed?.suggestedHours;
+    const hours = Array.isArray(rawHours)
+      ? rawHours
+          .map((h) => Number(h))
+          .filter((h) => Number.isInteger(h) && h >= 0 && h < 24)
+      : null;
+    return {
+      name: asStringOrNull(parsed?.name),
+      frequency: asNumberOrNull(parsed?.frequency),
+      durationDays: asNumberOrNull(parsed?.durationDays),
+      suggestedHours: hours && hours.length > 0 ? hours : null,
+    };
+  }
+
+  /** Free-text question -> plain-text answer. Backs POST /mistral/ask. */
+  async ask(question: string): Promise<{ answer: string }> {
     const response = await this.client.chat.complete({
-      model: 'mistral-large-latest',
+      model: MODEL,
       messages: [
-        {
-          role: 'system',
-          content: this.systemPrompt,
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              imageUrl: image,
-            },
-          ],
-        },
+        { role: 'system', content: this.askSystemPrompt },
+        { role: 'user', content: question },
+      ],
+    });
+    const content = response.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new NotFoundException('Aucune réponse de Mistral');
+    }
+    return {
+      answer: typeof content === 'string' ? content : JSON.stringify(content),
+    };
+  }
+
+  private toDataUrl(buffer: Buffer, mimeType: string): string {
+    return `data:${mimeType};base64,${buffer.toString('base64')}`;
+  }
+
+  /** Calls the model and parses its (possibly fenced) JSON reply into a record. */
+  private async completeToJson(
+    systemPrompt: string,
+    image: string,
+  ): Promise<Record<string, unknown> | null> {
+    const response = await this.client.chat.complete({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: [{ type: 'image_url', imageUrl: image }] },
       ],
     });
 
-    const content = response.choices[0]?.message?.content;
-
+    const content = response.choices?.[0]?.message?.content;
     if (!content) {
       throw new NotFoundException('Aucune réponse de Mistral');
     }
 
-    const rawString = typeof content === 'string' ? content : JSON.stringify(content);
-    const cleanedJson = rawString.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+    const raw = typeof content === 'string' ? content : JSON.stringify(content);
+    const cleaned = raw
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/gi, '')
+      .trim();
 
     try {
-      const data = JSON.parse(cleanedJson);
-      if (data && typeof data.phone === 'string') {
-        let phone = data.phone.trim();
-        if (phone.startsWith('+33')) {
-          phone = '0' + phone.slice(3);
-        } else if (phone.startsWith('33') && phone.length >= 10) {
-          phone = '0' + phone.slice(2);
-        }
-        phone = phone.replace(/\+/g, '').trim();
-        data.phone = phone;
-      }
-      return data;
+      const value: unknown = JSON.parse(cleaned);
+      return value && typeof value === 'object'
+        ? (value as Record<string, unknown>)
+        : null;
     } catch {
-      return { name: null, phone: null };
+      return null;
     }
   }
 
-  async medicationFromBuffer(buffer: Buffer, mimeType: string = 'image/jpeg') {
-    const base64Image = buffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64Image}`;
-    return this.medicationFromImage(dataUrl);
-  }
-
-  async medicationFromImage(image: string) {
-    const response = await this.client.chat.complete({
-      model: 'mistral-large-latest',
-      messages: [
-        {
-          role: 'system',
-          content: this.medicationSystemPrompt,
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              imageUrl: image,
-            },
-          ],
-        },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content;
-
-    if (!content) {
-      throw new NotFoundException('Aucune réponse de Mistral');
-    }
-
-    const rawString = typeof content === 'string' ? content : JSON.stringify(content);
-    const cleanedJson = rawString.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-
-    try {
-      return JSON.parse(cleanedJson);
-    } catch {
-      return { name: null, frequency: null, durationDays: null, suggestedHours: null };
-    }
-  }
+  private readonly askSystemPrompt = `
+Réponds en texte simple, sans aucun formatage Markdown : pas de **gras**, pas
+d'*italique*, pas de titres #, pas de listes à puces, pas de blocs de code.
+Juste des phrases normales.
+`;
 
   private readonly systemPrompt = `
 Tu es un extracteur de données.
@@ -149,5 +171,26 @@ Règles :
 `;
 }
 
+function asStringOrNull(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+}
 
+function asNumberOrNull(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
 
+/**
+ * Strips a leading "+" and converts a French international prefix to the local
+ * 0-prefixed form, matching the original behaviour.
+ */
+function normalizePhone(phone: string | null): string | null {
+  if (!phone) return null;
+  let p = phone.trim();
+  if (p.startsWith('+33')) {
+    p = '0' + p.slice(3);
+  } else if (p.startsWith('33') && p.length >= 10) {
+    p = '0' + p.slice(2);
+  }
+  return p.replace(/\+/g, '').trim() || null;
+}

@@ -1,115 +1,122 @@
+import { randomUUID } from 'crypto';
+import { join } from 'path';
+import { promises as fs } from 'fs';
 import {
   BadRequestException,
   Body,
   Controller,
   Post,
-  Req,
+  UnsupportedMediaTypeException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync, promises as fsPromises } from 'fs';
-import type { Request } from 'express';
+import { memoryStorage } from 'multer';
+import { assertPublicHttpUrl } from '../../common/net/ssrf.util';
+import {
+  ALLOWED_IMAGE_MIME,
+  extensionForMime,
+  sniffImageMime,
+} from '../../common/upload/image-file.util';
+import { UPLOAD_DIR } from '../uploads/uploads-reaper.service';
+import { AnalyzeImageUrlDto } from './dto/analyze-image-url.dto';
+import { AskDto } from './dto/ask.dto';
 import { MistralService } from './mistral.service';
 
-const uploadDir = join(process.cwd(), 'uploads');
-if (!existsSync(uploadDir)) {
-  mkdirSync(uploadDir, { recursive: true });
-}
+const MAX_UPLOAD_BYTES = (Number(process.env.MAX_UPLOAD_MB) || 8) * 1024 * 1024;
+
+
+const imageUpload = FileInterceptor('file', {
+  storage: memoryStorage(),
+  limits: { files: 1, fileSize: MAX_UPLOAD_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if ((ALLOWED_IMAGE_MIME as readonly string[]).includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(
+        new UnsupportedMediaTypeException('Only JPEG/PNG/WebP/HEIC images'),
+        false,
+      );
+    }
+  },
+});
 
 @Controller('mistral')
 export class MistralController {
-  constructor(private readonly mistral: MistralService) {}
+  constructor(
+    private readonly mistral: MistralService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Post('image-url')
-  async analyzeImageUrl(@Body('url') url: string) {
-    return this.mistral.contactFromImage(url);
+  async analyzeImageUrl(@Body() dto: AnalyzeImageUrlDto) {
+    assertPublicHttpUrl(dto.url);
+    return this.mistral.contactFromImage(dto.url);
+  }
+
+  @Post('ask')
+  async ask(@Body() dto: AskDto) {
+    return this.mistral.ask(dto.question);
   }
 
   @Post('scan-photo')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: uploadDir,
-        filename: (_req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname) || '.jpg';
-          callback(null, `contact-${uniqueSuffix}${ext}`);
-        },
-      }),
-    }),
-  )
-  async scanPhoto(
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request,
-  ) {
-    if (!file) {
-      throw new BadRequestException("Aucun fichier image n'a été fourni.");
-    }
-
-    const fileBuffer = await fsPromises.readFile(file.path);
-    const extractedData = await this.mistral.contactFromBuffer(
-      fileBuffer,
-      file.mimetype || 'image/jpeg',
-    );
-
-    const host = req.get('host') || 'localhost:3000';
-    const protocol = req.protocol || 'http';
-    const photoUrl = `${protocol}://${host}/uploads/${file.filename}`;
-
+  @UseInterceptors(imageUpload)
+  async scanPhoto(@UploadedFile() file?: Express.Multer.File) {
+    const { buffer, mime, photoUrl, filename } = await this.persistImage(file);
+    const extracted = await this.mistral.contactFromBuffer(buffer, mime);
     return {
       success: true,
-      name: extractedData?.name ?? null,
-      phone: extractedData?.phone ?? null,
+      name: extracted?.name ?? null,
+      phone: extracted?.phone ?? null,
       photoUrl,
-      filename: file.filename,
+      filename,
     };
   }
 
   @Post('scan-medication')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: uploadDir,
-        filename: (_req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname) || '.jpg';
-          callback(null, `medication-${uniqueSuffix}${ext}`);
-        },
-      }),
-    }),
-  )
-  async scanMedication(
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request,
-  ) {
-    if (!file) {
+  @UseInterceptors(imageUpload)
+  async scanMedication(@UploadedFile() file?: Express.Multer.File) {
+    const { buffer, mime, photoUrl, filename } = await this.persistImage(file);
+    const extracted = await this.mistral.medicationFromBuffer(buffer, mime);
+    return {
+      success: true,
+      name: extracted?.name ?? null,
+      frequency: extracted?.frequency ?? null,
+      durationDays: extracted?.durationDays ?? null,
+      suggestedHours: extracted?.suggestedHours ?? null,
+      photoUrl,
+      filename,
+    };
+  }
+
+  private async persistImage(file?: Express.Multer.File): Promise<{
+    buffer: Buffer;
+    mime: string;
+    photoUrl: string;
+    filename: string;
+  }> {
+    if (!file?.buffer?.length) {
       throw new BadRequestException("Aucun fichier image n'a été fourni.");
     }
 
-    const fileBuffer = await fsPromises.readFile(file.path);
-    const extractedData = await this.mistral.medicationFromBuffer(
-      fileBuffer,
-      file.mimetype || 'image/jpeg',
-    );
+    const mime = sniffImageMime(file.buffer);
+    if (!mime) {
+      throw new UnsupportedMediaTypeException(
+        "Le fichier n'est pas une image reconnue (JPEG, PNG, WebP, HEIC).",
+      );
+    }
 
-    const host = req.get('host') || 'localhost:3000';
-    const protocol = req.protocol || 'http';
-    const photoUrl = `${protocol}://${host}/uploads/${file.filename}`;
+    const filename = `scan-${randomUUID()}${extensionForMime(mime)}`;
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    await fs.writeFile(join(UPLOAD_DIR, filename), file.buffer);
 
+    const base = this.config.getOrThrow<string>('APP_URL').replace(/\/$/, '');
     return {
-      success: true,
-      name: extractedData?.name ?? null,
-      frequency: extractedData?.frequency ?? null,
-      durationDays: extractedData?.durationDays ?? null,
-      suggestedHours: extractedData?.suggestedHours ?? null,
-      photoUrl,
-      filename: file.filename,
+      buffer: file.buffer,
+      mime,
+      photoUrl: `${base}/uploads/${filename}`,
+      filename,
     };
   }
 }
-
-
-
