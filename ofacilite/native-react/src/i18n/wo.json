@@ -196,5 +196,11 @@
   "map_desc_say_place": "Lálal, wax tur wu bérab, dinaa tambali GPS ci tànk.",
   "map_say_place_prompt": "Wax tur wu bérab, walla : meri, ndimbal social, bank alimentaire.",
   "map_guiding": "Maa ngi la jiite ci tànk ba {{name}}.",
-  "map_place_not_found": "Gisuma bérab boobu. Jéematal."
+  "map_place_not_found": "Gisuma bérab boobu. Jéematal.",
+  "login_intro": "Nuyu naa la. Duggal sa limu ngir dugg.",
+  "login_field": "Sa limu",
+  "login_button": "Dugg",
+  "login_error": "Limu bi baaxul. Jéematal.",
+  "logout": "Génn",
+  "logout_desc": "Génn. Dinga wara duggal sa limu bu bees."
 }

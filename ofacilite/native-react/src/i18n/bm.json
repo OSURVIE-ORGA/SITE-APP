@@ -196,5 +196,11 @@
   "map_desc_say_place": "Digili kɛ, yɔrɔ tɔgɔ fɔ, ne bɛ GPS daminɛ sen na.",
   "map_say_place_prompt": "Yɔrɔ tɔgɔ fɔ, walima : meri, ɲɛmɔgɔ dɛmɛ, dumuni bank.",
   "map_guiding": "N bɛ i ɲɛminɛ sen na ka taa {{name}}.",
-  "map_place_not_found": "N ma o yɔrɔ sɔrɔ. Segin k’a kɛ."
+  "map_place_not_found": "N ma o yɔrɔ sɔrɔ. Segin k’a kɛ.",
+  "login_intro": "I ni cɛ. I ka nimɔrɔ sɛbɛn walisa ka don.",
+  "login_field": "I ka nimɔrɔ",
+  "login_button": "Don",
+  "login_error": "Nimɔrɔ man ɲi. Segin k’a kɛ.",
+  "logout": "Bɔ",
+  "logout_desc": "Bɔ. I bɛna i ka nimɔrɔ sɛbɛn tugun."
 }

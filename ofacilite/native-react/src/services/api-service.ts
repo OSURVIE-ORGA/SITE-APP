@@ -9,20 +9,18 @@ import { File as FsFile, UploadType } from 'expo-file-system';
  *  3. the deployed API (fallback for a build with no env var)
  */
 function resolveApiUrl(): string {
+  let base: string;
   if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL.replace(/\/$/, '');
+    base = process.env.EXPO_PUBLIC_API_URL.replace(/\/$/, '');
+  } else {
+    const hostUri = Constants.expoConfig?.hostUri;
+    base = hostUri
+      ? `http://${hostUri.split(':')[0]}:3000`
+      : 'https://92-222-70-138.sslip.io';
   }
-  const hostUri = Constants.expoConfig?.hostUri;
-  if (hostUri) {
-    return `http://${hostUri.split(':')[0]}:3000`;
-  }
-  return 'https://92-222-70-138.sslip.io';
+  // Toutes les routes NestJS sont sous /api.
+  return `${base}/api`;
 }
-
-// Shared secret expected by the API on every route except /health. Embedded in
-// the JS bundle (EXPO_PUBLIC_*), so it deters casual abuse of the paid Mistral
-// endpoints, not a determined attacker — see the review notes.
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? '';
 
 const DEFAULT_TIMEOUT_MS = 25_000;
 
@@ -66,6 +64,8 @@ function toFilePart(imageUri: string): RNFilePart {
 class ApiService {
   private static _instance: ApiService;
   private _baseUrl: string = resolveApiUrl();
+  private _authToken: string | null = null;
+  private _onUnauthorized: (() => void) | null = null;
 
   static get instance(): ApiService {
     if (!ApiService._instance) {
@@ -82,7 +82,33 @@ class ApiService {
     return this._baseUrl;
   }
 
-  /** fetch + X-API-Key header + timeout. Never sets Content-Type (FormData safe). */
+  /** Jeton de session (JWT) — placé sur chaque requête en `Authorization`. */
+  setAuthToken(token: string | null): void {
+    this._authToken = token;
+  }
+
+  /** Appelé sur un 401 (jeton expiré/révoqué) : l'AuthProvider déconnecte. */
+  setOnUnauthorized(cb: (() => void) | null): void {
+    this._onUnauthorized = cb;
+  }
+
+  private authHeader(): Record<string, string> {
+    return this._authToken ? { Authorization: `Bearer ${this._authToken}` } : {};
+  }
+
+  /** Connexion par numéro -> renvoie le JWT (ou null). */
+  async login(loginCode: string): Promise<string | null> {
+    const response = await this.request('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loginCode }),
+    });
+    if (!response) return null;
+    const data = (await response.json()) as { token?: string };
+    return data.token ?? null;
+  }
+
+  /** fetch + Authorization + timeout. Never sets Content-Type (FormData safe). */
   private async request(
     path: string,
     init: RequestInit,
@@ -94,15 +120,12 @@ class ApiService {
       const response = await fetch(`${this._baseUrl}${path}`, {
         ...init,
         signal: controller.signal,
-        headers: { ...(init.headers ?? {}), 'X-API-Key': API_KEY },
+        headers: { ...(init.headers ?? {}), ...this.authHeader() },
       });
       if (!response.ok) {
-        if (response.status === 401) {
-          console.warn(
-            `[api] 401 on ${path} — EXPO_PUBLIC_API_KEY missing or wrong`,
-          );
-        } else {
-          console.warn(`[api] ${response.status} on ${path}`);
+        console.warn(`[api] ${response.status} on ${path}`);
+        if (response.status === 401 && path !== '/auth/login') {
+          this._onUnauthorized?.();
         }
         return null;
       }
@@ -138,9 +161,10 @@ class ApiService {
         uploadType: UploadType.MULTIPART,
         fieldName: 'file',
         mimeType,
-        headers: { 'X-API-Key': API_KEY },
+        headers: this.authHeader(),
         signal: controller.signal,
       });
+      if (res.status === 401) this._onUnauthorized?.();
       return { status: res.status, body: res.body };
     } catch (err) {
       const e = err as { name?: string; message?: string };

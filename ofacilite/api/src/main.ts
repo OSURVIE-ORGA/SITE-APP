@@ -31,6 +31,10 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
   });
 
+  // Toutes les routes NestJS sous /api (ex. /api/auth/login, /api/admin/users).
+  // `health` reste à la racine pour les healthchecks Docker.
+  app.setGlobalPrefix('api', { exclude: ['health'] });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -196,5 +196,11 @@
   "map_desc_say_place": "Tap, say the name of a place, I start walking directions.",
   "map_say_place_prompt": "Say the name of a place, or: town hall, social services, food bank.",
   "map_guiding": "Guiding you on foot to {{name}}.",
-  "map_place_not_found": "I couldn’t find that place. Try again."
+  "map_place_not_found": "I couldn’t find that place. Try again.",
+  "login_intro": "Hello. Enter your number to sign in.",
+  "login_field": "Your number",
+  "login_button": "Sign in",
+  "login_error": "Wrong number. Try again.",
+  "logout": "Sign out",
+  "logout_desc": "Sign out. You will need to enter your number again."
 }

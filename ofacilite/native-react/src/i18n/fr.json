@@ -198,5 +198,11 @@
   "map_desc_say_place": "Appuyez, dites le nom d’un lieu, je lance le GPS à pied.",
   "map_say_place_prompt": "Dites le nom d’un lieu, ou : mairie, aide sociale, banque alimentaire.",
   "map_guiding": "Je vous guide à pied vers {{name}}.",
-  "map_place_not_found": "Je n’ai pas trouvé ce lieu. Réessayez."
+  "map_place_not_found": "Je n’ai pas trouvé ce lieu. Réessayez.",
+  "login_intro": "Bonjour. Entrez votre numéro pour vous connecter.",
+  "login_field": "Votre numéro",
+  "login_button": "Se connecter",
+  "login_error": "Numéro incorrect. Réessayez.",
+  "logout": "Se déconnecter",
+  "logout_desc": "Se déconnecter. Vous devrez ressaisir votre numéro."
 }

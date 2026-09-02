@@ -10,6 +10,7 @@ import LanguageSheet from "@/components/language-sheet";
 import { AppColors, BorderRadius, FontSizes, Spacing } from "@/constants/theme";
 import TtsService from "@/services/tts-service";
 import { useAutoTTS } from "@/hooks/useAutoTTS";
+import { useAuth } from "@/context/auth-context";
 
 // Visite guidée : mêmes entrées que la grille, dans l'ordre.
 const DISCOVERY_KEYS = [
@@ -22,6 +23,7 @@ const DISCOVERY_KEYS = [
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { signOut } = useAuth();
 
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [highlightedButton, setHighlightedButton] = useState<number | null>(
@@ -152,6 +154,16 @@ export default function HomeScreen() {
               hitSlop={8}
             >
               <Ionicons name="language" size={28} color={AppColors.dark} />
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                TtsService.instance.stop();
+                void signOut();
+              }}
+              onLongPress={() => TtsService.instance.speak(t("logout_desc"))}
+              hitSlop={8}
+            >
+              <Ionicons name="log-out" size={28} color={AppColors.dark} />
             </Pressable>
           </View>
         </View>
