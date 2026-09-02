@@ -11,6 +11,7 @@ import { MistralModule } from './modules/mistral/mistral.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { UsersModule } from './modules/users/users.module';
 import { User } from './modules/users/user.entity';
+import { AdminAlert } from './modules/admin/alert.entity';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 
@@ -37,7 +38,7 @@ import { AdminModule } from './modules/admin/admin.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
-        entities: [User],
+        entities: [User, AdminAlert],
         // v1 : le schéma est créé/aligné au démarrage. Passer aux migrations
         // TypeORM quand les tables de suivi (prises de médicaments…) arriveront.
         synchronize: true,

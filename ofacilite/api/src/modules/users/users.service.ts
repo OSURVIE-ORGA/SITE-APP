@@ -7,13 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  IsNull,
-  LessThan,
-  MoreThanOrEqual,
-  Not,
-  Repository,
-} from 'typeorm';
+import { IsNull, LessThan, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { User } from './user.entity';
 
 export interface UserStats {
@@ -130,7 +124,9 @@ export class UsersService implements OnApplicationBootstrap {
         this.repo.count({ where: { disabled: true } }),
         this.repo.count({ where: { lastSeenAt: MoreThanOrEqual(d7) } }),
         this.repo.count({ where: { lastSeenAt: MoreThanOrEqual(d30) } }),
-        this.repo.count({ where: { lastSeenAt: IsNull(), role: Not('admin') } }),
+        this.repo.count({
+          where: { lastSeenAt: IsNull(), role: Not('admin') },
+        }),
       ]);
     return {
       total,
