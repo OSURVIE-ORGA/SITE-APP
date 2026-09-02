@@ -1,5 +1,6 @@
 import { randomInt } from 'crypto';
 import {
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -85,8 +86,15 @@ export class UsersService implements OnApplicationBootstrap {
     return this.repo.save(user);
   }
 
-  async update(id: string, input: UpdateUserInput): Promise<User> {
+  async update(
+    id: string,
+    input: UpdateUserInput,
+    requesterId?: string,
+  ): Promise<User> {
     const user = await this.requireUser(id);
+    if (input.disabled === true && user.role === 'admin') {
+      await this.assertNotLastAdmin(user, requesterId, 'désactiver');
+    }
     Object.assign(user, input);
     return this.repo.save(user);
   }
@@ -97,10 +105,10 @@ export class UsersService implements OnApplicationBootstrap {
     return this.repo.save(user);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, requesterId?: string): Promise<void> {
     const user = await this.requireUser(id);
     if (user.role === 'admin') {
-      throw new NotFoundException('Le compte admin ne peut pas être supprimé.');
+      await this.assertNotLastAdmin(user, requesterId, 'supprimer');
     }
     await this.repo.remove(user);
   }
@@ -158,6 +166,27 @@ export class UsersService implements OnApplicationBootstrap {
       },
     });
     return [...stale, ...never];
+  }
+
+  /** Empêche de se verrouiller dehors : ni son propre compte, ni le dernier admin. */
+  private async assertNotLastAdmin(
+    target: User,
+    requesterId: string | undefined,
+    verb: string,
+  ): Promise<void> {
+    if (requesterId && target.id === requesterId) {
+      throw new ConflictException(
+        `Vous ne pouvez pas ${verb} votre propre compte administrateur.`,
+      );
+    }
+    const otherActiveAdmins = await this.repo.count({
+      where: { role: 'admin', disabled: false, id: Not(target.id) },
+    });
+    if (otherActiveAdmins === 0) {
+      throw new ConflictException(
+        `Impossible de ${verb} le dernier compte administrateur actif.`,
+      );
+    }
   }
 
   private async requireUser(id: string): Promise<User> {

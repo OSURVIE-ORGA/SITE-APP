@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import { api } from './lib';
-import { Layout } from './ui';
+import { DialogProvider, Layout } from './ui';
 import { Login } from './pages/Login';
 import { Overview } from './pages/Overview';
 import { Users } from './pages/Users';
@@ -20,22 +20,24 @@ export function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={user ? <Navigate to="/" replace /> : <Login />}
-      />
-      {user ? (
-        <Route element={<Shell />}>
-          <Route index element={<Overview />} />
-          <Route path="users" element={<Users />} />
-          <Route path="alerts" element={<Alerts />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      ) : (
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      )}
-    </Routes>
+    <DialogProvider>
+      <Routes>
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/" replace /> : <Login />}
+        />
+        {user ? (
+          <Route element={<Shell />}>
+            <Route index element={<Overview />} />
+            <Route path="users" element={<Users />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        ) : (
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        )}
+      </Routes>
+    </DialogProvider>
   );
 }
 

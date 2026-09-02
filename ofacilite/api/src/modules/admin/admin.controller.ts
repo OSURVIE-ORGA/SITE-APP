@@ -11,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminGuard } from '../../common/guards/admin.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { User } from '../users/user.entity';
 import { toUserView } from '../users/user-view';
 import { UsersService } from '../users/users.service';
 import { LoginEventsService } from '../login-events/login-events.service';
@@ -77,8 +79,9 @@ export class AdminController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
+    @CurrentUser() me: User,
   ) {
-    return toUserView(await this.users.update(id, dto));
+    return toUserView(await this.users.update(id, dto, me.id));
   }
 
   @Post('users/:id/regenerate-code')
@@ -87,8 +90,11 @@ export class AdminController {
   }
 
   @Delete('users/:id')
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    await this.users.remove(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() me: User,
+  ) {
+    await this.users.remove(id, me.id);
     return { deleted: true };
   }
 }

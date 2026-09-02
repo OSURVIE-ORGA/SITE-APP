@@ -1,6 +1,135 @@
-import type { ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from './auth';
+
+/* ───────────────── Boîtes de dialogue (vraies modales, pas window.confirm) ─── */
+
+interface DialogOpts {
+  title: string;
+  message?: string;
+  tone?: 'primary' | 'error' | 'success';
+  confirmLabel?: string;
+  cancelLabel?: string;
+}
+interface DialogInternal extends DialogOpts {
+  kind: 'confirm' | 'alert';
+  resolve: (ok: boolean) => void;
+}
+
+const TONE_BTN: Record<string, string> = {
+  primary: 'btn-primary',
+  error: 'btn-error',
+  success: 'btn-success',
+};
+
+const DialogCtx = createContext<{
+  confirm: (o: DialogOpts) => Promise<boolean>;
+  alert: (o: DialogOpts) => Promise<boolean>;
+} | null>(null);
+
+export function DialogProvider({ children }: { children: ReactNode }) {
+  const [d, setD] = useState<DialogInternal | null>(null);
+
+  const value = useMemo(
+    () => ({
+      confirm: (o: DialogOpts) =>
+        new Promise<boolean>((resolve) =>
+          setD({ ...o, kind: 'confirm', resolve }),
+        ),
+      alert: (o: DialogOpts) =>
+        new Promise<boolean>((resolve) =>
+          setD({ ...o, kind: 'alert', resolve }),
+        ),
+    }),
+    [],
+  );
+
+  const done = (ok: boolean) => {
+    d?.resolve(ok);
+    setD(null);
+  };
+
+  return (
+    <DialogCtx.Provider value={value}>
+      {children}
+      {d && (
+        <div className="modal modal-open" role="alertdialog" aria-modal="true">
+          <div className="modal-box">
+            <h3 className="text-lg font-bold">{d.title}</h3>
+            {d.message && (
+              <p className="whitespace-pre-line py-3 text-sm opacity-80">
+                {d.message}
+              </p>
+            )}
+            <div className="modal-action">
+              {d.kind === 'confirm' && (
+                <button className="btn btn-ghost" onClick={() => done(false)}>
+                  {d.cancelLabel ?? 'Annuler'}
+                </button>
+              )}
+              <button
+                className={`btn ${TONE_BTN[d.tone ?? 'primary']}`}
+                autoFocus
+                onClick={() => done(true)}
+              >
+                {d.confirmLabel ?? 'OK'}
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="modal-backdrop"
+            aria-label="Fermer"
+            onClick={() => done(false)}
+          />
+        </div>
+      )}
+    </DialogCtx.Provider>
+  );
+}
+
+export function useDialog() {
+  const ctx = useContext(DialogCtx);
+  if (!ctx) throw new Error('useDialog hors DialogProvider');
+  return ctx;
+}
+
+/* ───────────────────────────── Icônes (SVG inline) ─────────────────────────── */
+
+const ICONS = {
+  edit: 'M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z',
+  code: 'M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5',
+  trash:
+    'm14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.02-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0',
+};
+
+export function Icon({
+  name,
+  className = 'h-5 w-5',
+}: {
+  name: keyof typeof ICONS;
+  className?: string;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.7}
+      stroke="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d={ICONS[name]} />
+    </svg>
+  );
+}
 
 /* ─────────────────────────── Layout ─────────────────────────── */
 

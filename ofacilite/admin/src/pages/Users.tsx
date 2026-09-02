@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { activityDot, api, LANGS, relativeTime, type ApiUser } from '../lib';
+import { Icon, useDialog } from '../ui';
+
+const errMsg = (e: unknown) =>
+  e instanceof Error ? e.message : 'Erreur inconnue.';
 
 export function Users() {
   const [users, setUsers] = useState<ApiUser[]>([]);
@@ -9,6 +13,8 @@ export function Users() {
   const [onlyInactive, setOnlyInactive] = useState(false);
   const [showAdmins, setShowAdmins] = useState(false);
   const [query, setQuery] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const dlg = useDialog();
 
   const reload = useCallback(async () => {
     setError(null);
@@ -43,26 +49,74 @@ export function Users() {
   }, [users, onlyInactive, showAdmins, query]);
 
   const setDisabled = async (u: ApiUser, disabled: boolean) => {
-    await api(`/admin/users/${u.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ disabled }),
-    });
-    void reload();
+    setBusyId(u.id);
+    try {
+      await api(`/admin/users/${u.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ disabled }),
+      });
+      await reload();
+    } catch (e) {
+      await dlg.alert({
+        title: 'Action impossible',
+        message: errMsg(e),
+        tone: 'error',
+      });
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const regenerate = async (u: ApiUser) => {
-    if (!confirm(`Nouveau numéro pour ${u.firstName} ${u.lastName} ?`)) return;
-    const res = await api<ApiUser>(`/admin/users/${u.id}/regenerate-code`, {
-      method: 'POST',
+    const ok = await dlg.confirm({
+      title: 'Nouveau numéro de connexion',
+      message: `Générer un nouveau numéro pour ${u.firstName} ${u.lastName} ?\nL'ancien numéro cessera immédiatement de fonctionner.`,
+      confirmLabel: 'Générer',
     });
-    alert(`Nouveau numéro : ${res.loginCode}`);
-    void reload();
+    if (!ok) return;
+    setBusyId(u.id);
+    try {
+      const res = await api<ApiUser>(`/admin/users/${u.id}/regenerate-code`, {
+        method: 'POST',
+      });
+      await reload();
+      await dlg.alert({
+        title: 'Nouveau numéro',
+        message: `${u.firstName} ${u.lastName}\n\n${res.loginCode}`,
+        tone: 'success',
+      });
+    } catch (e) {
+      await dlg.alert({
+        title: 'Action impossible',
+        message: errMsg(e),
+        tone: 'error',
+      });
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const remove = async (u: ApiUser) => {
-    if (!confirm(`Supprimer le compte de ${u.firstName} ${u.lastName} ?`)) return;
-    await api(`/admin/users/${u.id}`, { method: 'DELETE' });
-    void reload();
+    const ok = await dlg.confirm({
+      title: 'Supprimer le compte',
+      message: `Supprimer définitivement le compte de ${u.firstName} ${u.lastName} ?\nCette action est irréversible.`,
+      confirmLabel: 'Supprimer',
+      tone: 'error',
+    });
+    if (!ok) return;
+    setBusyId(u.id);
+    try {
+      await api(`/admin/users/${u.id}`, { method: 'DELETE' });
+      await reload();
+    } catch (e) {
+      await dlg.alert({
+        title: 'Suppression impossible',
+        message: errMsg(e),
+        tone: 'error',
+      });
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (
@@ -180,35 +234,53 @@ export function Users() {
                         </span>
                       </td>
                       <td>
-                        <button
-                          className={`badge badge-sm ${
-                            u.disabled ? 'badge-error' : 'badge-success'
-                          }`}
-                          onClick={() => void setDisabled(u, !u.disabled)}
-                        >
-                          {u.disabled ? 'Désactivé' : 'Actif'}
-                        </button>
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-success toggle-sm"
+                          checked={!u.disabled}
+                          disabled={busyId === u.id}
+                          onChange={(e) =>
+                            void setDisabled(u, !e.target.checked)
+                          }
+                          aria-label={
+                            u.disabled
+                              ? 'Réactiver le compte'
+                              : 'Désactiver le compte'
+                          }
+                          title={u.disabled ? 'Compte désactivé' : 'Compte actif'}
+                        />
                       </td>
                       <td>
                         <div className="flex justify-end gap-1">
-                          <button
-                            className="btn btn-ghost btn-xs"
-                            onClick={() => setEditing(u)}
-                          >
-                            Modifier
-                          </button>
-                          <button
-                            className="btn btn-ghost btn-xs"
-                            onClick={() => void regenerate(u)}
-                          >
-                            Nº
-                          </button>
-                          <button
-                            className="btn btn-ghost btn-xs text-error"
-                            onClick={() => void remove(u)}
-                          >
-                            Suppr.
-                          </button>
+                          <div className="tooltip" data-tip="Modifier">
+                            <button
+                              className="btn btn-square btn-ghost btn-sm"
+                              onClick={() => setEditing(u)}
+                              aria-label="Modifier"
+                            >
+                              <Icon name="edit" />
+                            </button>
+                          </div>
+                          <div className="tooltip" data-tip="Nouveau numéro">
+                            <button
+                              className="btn btn-square btn-ghost btn-sm"
+                              disabled={busyId === u.id}
+                              onClick={() => void regenerate(u)}
+                              aria-label="Nouveau numéro"
+                            >
+                              <Icon name="code" />
+                            </button>
+                          </div>
+                          <div className="tooltip" data-tip="Supprimer">
+                            <button
+                              className="btn btn-square btn-ghost btn-sm text-error"
+                              disabled={busyId === u.id}
+                              onClick={() => void remove(u)}
+                              aria-label="Supprimer"
+                            >
+                              <Icon name="trash" />
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
