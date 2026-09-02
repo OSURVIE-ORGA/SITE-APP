@@ -38,16 +38,15 @@ function RootNavigator() {
   }, []);
 
   useEffect(() => {
-    if (
-      lastNotificationResponse &&
-      lastNotificationResponse.notification.request.content.data?.type ===
-        "medication"
-    ) {
-      const medName = lastNotificationResponse.notification.request.content.data
-        ?.name as string | undefined;
+    if (!lastNotificationResponse) return;
+    const data = lastNotificationResponse.notification.request.content.data;
+    if (data?.type === "medication") {
+      const medName = data?.name as string | undefined;
       setTimeout(() => {
         router.push({ pathname: "/medication-check", params: { name: medName } });
       }, 100);
+    } else if (data?.type === "message") {
+      setTimeout(() => router.push("/(tabs)/messages"), 100);
     }
   }, [lastNotificationResponse, router]);
 

@@ -209,5 +209,7 @@
   "messages_send": "செய்தியை அனுப்பு",
   "messages_empty": "இதுவரை செய்திகள் இல்லை. தொடங்க எழுதுங்கள் அல்லது பேசுங்கள்.",
   "messages_admin_label": "உங்கள் உதவியாளர்",
-  "messages_listen": "கேள்"
+  "messages_listen": "கேள்",
+  "messages_notif_title": "புதிய செய்தி",
+  "messages_notif_body": "உங்கள் உதவியாளர் உங்களுக்கு எழுதியுள்ளார்."
 }

@@ -1,8 +1,12 @@
 import { AppColors, MutedColor } from "@/constants/theme";
 import SosButton from "@/components/sos-button";
+import ApiService from "@/services/api-service";
+import NotificationService from "@/services/notification-service";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
@@ -10,6 +14,39 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
 
   const tabBarHeight = 70 + insets.bottom;
+
+  // Messages non lus : pastille sur l'onglet + notification quand ça augmente.
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const prevUnread = useRef(0);
+  const firstCheck = useRef(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const count = await ApiService.instance.getMessagesUnreadCount();
+      if (cancelled) return;
+      if (!firstCheck.current && count > prevUnread.current) {
+        void NotificationService.instance.notifyNow(
+          t("messages_notif_title"),
+          t("messages_notif_body"),
+          { type: "message" },
+        );
+      }
+      firstCheck.current = false;
+      prevUnread.current = count;
+      setUnreadMessages(count);
+    };
+    void check();
+    const timer = setInterval(check, 30000);
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") void check();
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, [t]);
 
   return (
     <>
@@ -81,6 +118,7 @@ export default function TabsLayout() {
           name="messages"
           options={{
             title: t("nav_messages"),
+            tabBarBadge: unreadMessages > 0 ? unreadMessages : undefined,
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="chatbubbles" size={size} color={color} />
             ),

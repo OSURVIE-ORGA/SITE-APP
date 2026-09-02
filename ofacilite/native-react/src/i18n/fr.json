@@ -211,5 +211,7 @@
   "messages_send": "Envoyer le message",
   "messages_empty": "Aucun message pour l'instant. Écrivez ou parlez pour commencer.",
   "messages_admin_label": "Votre accompagnateur",
-  "messages_listen": "Écouter"
+  "messages_listen": "Écouter",
+  "messages_notif_title": "Nouveau message",
+  "messages_notif_body": "Votre accompagnateur vous a écrit."
 }

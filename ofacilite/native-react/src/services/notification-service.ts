@@ -164,6 +164,27 @@ class NotificationService {
     });
   }
 
+  /** Affiche immédiatement une notification (ex. nouveau message). */
+  async notifyNow(
+    title: string,
+    body: string,
+    data?: Record<string, unknown>,
+  ): Promise<void> {
+    const notifications = await this.ensureReady();
+    if (!notifications) return;
+    await notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+        priority: notifications.AndroidNotificationPriority.HIGH,
+        data: data ?? {},
+        ...(Platform.OS === "android" && { channelId: "appointment_channel" }),
+      },
+      trigger: null,
+    });
+  }
+
   /** Annule une notification programmée */
   async cancel(id: string): Promise<void> {
     const notifications = getNotificationsModule();

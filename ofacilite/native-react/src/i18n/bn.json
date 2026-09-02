@@ -209,5 +209,7 @@
   "messages_send": "বার্তা পাঠান",
   "messages_empty": "এখনও কোনো বার্তা নেই। শুরু করতে লিখুন বা বলুন।",
   "messages_admin_label": "আপনার সহায়ক",
-  "messages_listen": "শুনুন"
+  "messages_listen": "শুনুন",
+  "messages_notif_title": "নতুন বার্তা",
+  "messages_notif_body": "আপনার সহায়ক আপনাকে লিখেছেন।"
 }

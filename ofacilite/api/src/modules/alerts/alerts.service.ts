@@ -43,4 +43,13 @@ export class AlertsService {
   async markAllRead(): Promise<void> {
     await this.repo.update({ readAt: IsNull() }, { readAt: new Date() });
   }
+
+  /** Marque comme lues les alertes non lues d'un type pour une personne
+   *  (ex. quand l'admin ouvre le fil de discussion). */
+  async dismiss(type: AlertType, userId: string): Promise<void> {
+    await this.repo.update(
+      { type, userId, readAt: IsNull() },
+      { readAt: new Date() },
+    );
+  }
 }

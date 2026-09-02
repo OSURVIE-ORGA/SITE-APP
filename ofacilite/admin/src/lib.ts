@@ -32,7 +32,7 @@ export interface Stats {
 
 export interface Alert {
   id: string;
-  type: 'user_inactive' | 'medication_missed';
+  type: 'user_inactive' | 'medication_missed' | 'new_message';
   userId: string | null;
   message: string;
   createdAt: string;

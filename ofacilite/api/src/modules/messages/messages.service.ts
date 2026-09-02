@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
+import { AlertsService } from '../alerts/alerts.service';
 import { UsersService } from '../users/users.service';
 import { Message } from './message.entity';
 import { MessageView, ThreadView, toMessageView } from './message-view';
@@ -11,6 +12,7 @@ export class MessagesService {
     @InjectRepository(Message)
     private readonly repo: Repository<Message>,
     private readonly users: UsersService,
+    private readonly alerts: AlertsService,
   ) {}
 
   // ── Côté personne (appli mobile) ──────────────────────────────
@@ -34,6 +36,13 @@ export class MessagesService {
         authorId: userId,
         body: body.trim(),
       }),
+    );
+    const user = await this.users.findById(userId);
+    const who = user ? `${user.firstName} ${user.lastName}` : 'Une personne';
+    await this.alerts.raise(
+      'new_message',
+      userId,
+      `${who} vous a envoyé un message.`,
     );
     return toMessageView(message);
   }
@@ -85,6 +94,7 @@ export class MessagesService {
       { userId, fromAdmin: false, readAt: IsNull() },
       { readAt: new Date() },
     );
+    await this.alerts.dismiss('new_message', userId);
     return messages.map(toMessageView);
   }
 

@@ -209,5 +209,7 @@
   "messages_send": "Yónnee bataaxal bi",
   "messages_empty": "Amul bataaxal ba tey. Bindal walla wax ngir tambali.",
   "messages_admin_label": "Ku la dimbali",
-  "messages_listen": "Déglu"
+  "messages_listen": "Déglu",
+  "messages_notif_title": "Bataaxal bu bees",
+  "messages_notif_body": "Ku la dimbali bind na la."
 }

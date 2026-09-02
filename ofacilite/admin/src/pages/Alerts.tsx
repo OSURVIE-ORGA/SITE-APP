@@ -5,11 +5,13 @@ import { Icon } from '../ui';
 const LABELS: Record<Alert['type'], string> = {
   user_inactive: 'Personne inactive',
   medication_missed: 'Médicament oublié',
+  new_message: 'Nouveau message',
 };
 
 const TYPE_BADGE: Record<Alert['type'], string> = {
   user_inactive: 'badge-warning',
   medication_missed: 'badge-error',
+  new_message: 'badge-primary',
 };
 
 export function Alerts() {

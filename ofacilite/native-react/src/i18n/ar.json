@@ -209,5 +209,7 @@
   "messages_send": "إرسال الرسالة",
   "messages_empty": "لا توجد رسائل بعد. اكتب أو تحدث للبدء.",
   "messages_admin_label": "المرافق الخاص بك",
-  "messages_listen": "استمع"
+  "messages_listen": "استمع",
+  "messages_notif_title": "رسالة جديدة",
+  "messages_notif_body": "لقد كتب لك المرافق الخاص بك."
 }

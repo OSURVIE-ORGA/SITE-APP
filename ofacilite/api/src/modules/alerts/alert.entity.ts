@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type AlertType = 'user_inactive' | 'medication_missed';
+export type AlertType = 'user_inactive' | 'medication_missed' | 'new_message';
 
 @Entity('admin_alerts')
 export class AdminAlert {

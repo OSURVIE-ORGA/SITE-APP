@@ -209,5 +209,7 @@
   "messages_send": "Bataaki ci",
   "messages_empty": "Bataaki si tɛ yen fɔlɔ. Sɛbɛnni kɛ walima kuma walasa ka daminɛ.",
   "messages_admin_label": "I dɛmɛbaga",
-  "messages_listen": "Lamɛn"
+  "messages_listen": "Lamɛn",
+  "messages_notif_title": "Bataaki kura",
+  "messages_notif_body": "I dɛmɛbaga ye sɛbɛnni kɛ i ma."
 }

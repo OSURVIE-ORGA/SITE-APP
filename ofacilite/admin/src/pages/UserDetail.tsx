@@ -101,7 +101,7 @@ export function UserDetail() {
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary">
             {`${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()}
           </span>
-          <div>
+          <div className="flex-1">
             <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
               {user.firstName} {user.lastName}
               {user.role === 'admin' && (
@@ -116,6 +116,15 @@ export function UserDetail() {
               {dot.label} · vu {relativeTime(user.lastSeenAt)}
             </p>
           </div>
+          {user.role !== 'admin' && (
+            <Link
+              to={`/messages?user=${user.id}`}
+              className="btn btn-primary btn-sm gap-2"
+            >
+              <Icon name="chat" className="h-4 w-4" />
+              Envoyer un message
+            </Link>
+          )}
         </header>
       </div>
 

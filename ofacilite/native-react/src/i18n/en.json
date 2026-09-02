@@ -209,5 +209,7 @@
   "messages_send": "Send message",
   "messages_empty": "No messages yet. Write or speak to start.",
   "messages_admin_label": "Your support worker",
-  "messages_listen": "Listen"
+  "messages_listen": "Listen",
+  "messages_notif_title": "New message",
+  "messages_notif_body": "Your support worker has written to you."
 }

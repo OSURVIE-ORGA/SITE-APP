@@ -1,26 +1,36 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   api,
   relativeTime,
+  type ApiUser,
   type ChatMessage,
   type MessageThread,
 } from '../lib';
 import { Icon } from '../ui';
 
 export function Messages() {
+  const [params, setParams] = useSearchParams();
   const [threads, setThreads] = useState<MessageThread[]>([]);
-  const [active, setActive] = useState<string | null>(null);
+  const [active, setActive] = useState<string | null>(params.get('user'));
+  const [peerName, setPeerName] = useState<Record<string, string>>({});
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   const loadThreads = useCallback(async () => {
     try {
       const list = await api<MessageThread[]>('/admin/messages');
       setThreads(list);
+      setPeerName((prev) => {
+        const next = { ...prev };
+        for (const t of list) next[t.userId] = t.userName;
+        return next;
+      });
       setActive((cur) => cur ?? list[0]?.userId ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur de chargement.');
@@ -28,6 +38,26 @@ export function Messages() {
       setLoadingThreads(false);
     }
   }, []);
+
+  // Résout le nom d'une personne ouverte sans fil existant (bouton + ou ?user=).
+  useEffect(() => {
+    if (!active || peerName[active]) return;
+    void api<ApiUser>(`/admin/users/${active}`)
+      .then((u) =>
+        setPeerName((prev) => ({
+          ...prev,
+          [active]: `${u.firstName} ${u.lastName}`,
+        })),
+      )
+      .catch(() => {});
+  }, [active, peerName]);
+
+  const openThread = (userId: string, name?: string) => {
+    setActive(userId);
+    if (name) setPeerName((prev) => ({ ...prev, [userId]: name }));
+    setPicking(false);
+    if (params.get('user')) setParams({}, { replace: true });
+  };
 
   const loadThread = useCallback(async (userId: string) => {
     try {
@@ -74,15 +104,26 @@ export function Messages() {
     }
   };
 
-  const activeThread = threads.find((t) => t.userId === active);
+  const activeName = active
+    ? threads.find((t) => t.userId === active)?.userName ?? peerName[active]
+    : undefined;
 
   return (
     <div className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
-        <p className="mt-1 text-sm text-base-content/60">
-          Discussions avec les personnes accompagnées.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
+          <p className="mt-1 text-sm text-base-content/60">
+            Discussions avec les personnes accompagnées.
+          </p>
+        </div>
+        <button
+          className="btn btn-primary btn-sm gap-2"
+          onClick={() => setPicking(true)}
+        >
+          <Icon name="plus" className="h-4 w-4" />
+          Nouvelle conversation
+        </button>
       </header>
 
       {error && (
@@ -159,9 +200,9 @@ export function Messages() {
             active ? '' : 'hidden lg:flex'
           }`}
         >
-          {!activeThread ? (
+          {!active ? (
             <div className="flex flex-1 items-center justify-center text-sm text-base-content/45">
-              Choisissez une conversation.
+              Choisissez une conversation ou démarrez-en une.
             </div>
           ) : (
             <>
@@ -173,7 +214,7 @@ export function Messages() {
                 >
                   ←
                 </button>
-                <span className="font-semibold">{activeThread.userName}</span>
+                <span className="font-semibold">{activeName ?? '…'}</span>
               </header>
 
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -243,6 +284,99 @@ export function Messages() {
           )}
         </section>
       </div>
+
+      {picking && (
+        <UserPicker
+          onClose={() => setPicking(false)}
+          onPick={(u) => openThread(u.id, `${u.firstName} ${u.lastName}`)}
+        />
+      )}
+    </div>
+  );
+}
+
+function UserPicker({
+  onClose,
+  onPick,
+}: {
+  onClose: () => void;
+  onPick: (u: ApiUser) => void;
+}) {
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [q, setQ] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api<ApiUser[]>('/admin/users')
+      .then((list) => setUsers(list.filter((u) => u.role !== 'admin')))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const shown = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return s
+      ? users.filter((u) =>
+          `${u.firstName} ${u.lastName} ${u.loginCode}`
+            .toLowerCase()
+            .includes(s),
+        )
+      : users;
+  }, [users, q]);
+
+  return (
+    <div className="modal modal-open modal-bottom sm:modal-middle">
+      <div className="modal-box flex max-h-[80vh] flex-col border border-base-300 sm:max-w-md">
+        <h3 className="text-lg font-bold">Nouvelle conversation</h3>
+        <input
+          type="search"
+          autoFocus
+          className="input input-bordered input-sm mt-3 w-full"
+          placeholder="Rechercher une personne…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <div className="mt-3 flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="py-10 text-center">
+              <span className="loading loading-spinner text-primary" />
+            </div>
+          ) : shown.length === 0 ? (
+            <p className="py-10 text-center text-sm text-base-content/45">
+              Aucune personne.
+            </p>
+          ) : (
+            <ul className="divide-y divide-base-200">
+              {shown.map((u) => (
+                <li key={u.id}>
+                  <button
+                    className="flex w-full items-center justify-between gap-3 px-1 py-2.5 text-left text-sm hover:bg-base-200/60"
+                    onClick={() => onPick(u)}
+                  >
+                    <span className="font-medium">
+                      {u.firstName} {u.lastName}
+                    </span>
+                    <span className="font-mono text-xs text-base-content/45">
+                      {u.loginCode}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="modal-action">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>
+            Annuler
+          </button>
+        </div>
+      </div>
+      <button
+        type="button"
+        className="modal-backdrop"
+        aria-label="Fermer"
+        onClick={onClose}
+      />
     </div>
   );
 }
