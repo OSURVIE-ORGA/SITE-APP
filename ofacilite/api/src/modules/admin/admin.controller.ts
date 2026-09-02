@@ -18,6 +18,8 @@ import { UsersService } from '../users/users.service';
 import { LoginEventsService } from '../login-events/login-events.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { CareService } from '../care/care.service';
+import { MessagesService } from '../messages/messages.service';
+import { SendMessageDto } from '../messages/dto/send-message.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -29,6 +31,7 @@ export class AdminController {
     private readonly alerts: AlertsService,
     private readonly loginEvents: LoginEventsService,
     private readonly care: CareService,
+    private readonly messages: MessagesService,
   ) {}
 
   // ── Statistiques ────────────────────────────────────────────────
@@ -64,6 +67,31 @@ export class AdminController {
   async readAllAlerts() {
     await this.alerts.markAllRead();
     return { ok: true };
+  }
+
+  // ── Messagerie ─────────────────────────────────────────────────
+  @Get('messages')
+  listThreads() {
+    return this.messages.listThreads();
+  }
+
+  @Get('messages/unread-count')
+  async messagesUnreadCount() {
+    return { count: await this.messages.unreadForAdmin() };
+  }
+
+  @Get('users/:id/messages')
+  thread(@Param('id', ParseUUIDPipe) id: string) {
+    return this.messages.threadForAdmin(id);
+  }
+
+  @Post('users/:id/messages')
+  replyToUser(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SendMessageDto,
+    @CurrentUser() me: User,
+  ) {
+    return this.messages.sendFromAdmin(id, me.id, dto.body);
   }
 
   // ── Comptes ─────────────────────────────────────────────────────

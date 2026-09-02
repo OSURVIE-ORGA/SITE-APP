@@ -202,5 +202,12 @@
   "login_button": "Dugg",
   "login_error": "Limu bi baaxul. Jéematal.",
   "logout": "Génn",
-  "logout_desc": "Génn. Dinga wara duggal sa limu bu bees."
+  "logout_desc": "Génn. Dinga wara duggal sa limu bu bees.",
+  "nav_messages": "Bataaxal yi",
+  "messages_intro_tts": "Fii, mën ngaa bind walla wax ak sa ku la dimbali. Dina la tontu bu gën gaaw.",
+  "messages_placeholder": "Bindal sa bataaxal…",
+  "messages_send": "Yónnee bataaxal bi",
+  "messages_empty": "Amul bataaxal ba tey. Bindal walla wax ngir tambali.",
+  "messages_admin_label": "Ku la dimbali",
+  "messages_listen": "Déglu"
 }

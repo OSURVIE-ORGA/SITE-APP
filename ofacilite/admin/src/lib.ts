@@ -69,6 +69,23 @@ export interface CareMedicationEvent {
   reportedAt: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  fromAdmin: boolean;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface MessageThread {
+  userId: string;
+  userName: string;
+  lastMessage: string;
+  lastAt: string;
+  lastFromAdmin: boolean;
+  unread: number;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,

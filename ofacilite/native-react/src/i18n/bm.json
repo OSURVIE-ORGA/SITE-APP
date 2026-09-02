@@ -202,5 +202,12 @@
   "login_button": "Don",
   "login_error": "Nimɔrɔ man ɲi. Segin k’a kɛ.",
   "logout": "Bɔ",
-  "logout_desc": "Bɔ. I bɛna i ka nimɔrɔ sɛbɛn tugun."
+  "logout_desc": "Bɔ. I bɛna i ka nimɔrɔ sɛbɛn tugun.",
+  "nav_messages": "Bataakiw",
+  "messages_intro_tts": "Yan na, i bɛ se ka sɛbɛnni kɛ walima ka kuma i dɛmɛbaga fɛ. A bɛna i jaabi joona.",
+  "messages_placeholder": "I ka bataaki sɛbɛn…",
+  "messages_send": "Bataaki ci",
+  "messages_empty": "Bataaki si tɛ yen fɔlɔ. Sɛbɛnni kɛ walima kuma walasa ka daminɛ.",
+  "messages_admin_label": "I dɛmɛbaga",
+  "messages_listen": "Lamɛn"
 }

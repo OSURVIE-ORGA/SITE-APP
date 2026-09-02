@@ -204,5 +204,12 @@
   "login_button": "Se connecter",
   "login_error": "Numéro incorrect. Réessayez.",
   "logout": "Se déconnecter",
-  "logout_desc": "Se déconnecter. Vous devrez ressaisir votre numéro."
+  "logout_desc": "Se déconnecter. Vous devrez ressaisir votre numéro.",
+  "nav_messages": "Messages",
+  "messages_intro_tts": "Ici, vous pouvez écrire ou parler à votre accompagnateur. Il vous répondra dès que possible.",
+  "messages_placeholder": "Écrivez votre message…",
+  "messages_send": "Envoyer le message",
+  "messages_empty": "Aucun message pour l'instant. Écrivez ou parlez pour commencer.",
+  "messages_admin_label": "Votre accompagnateur",
+  "messages_listen": "Écouter"
 }

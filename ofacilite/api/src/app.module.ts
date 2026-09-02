@@ -23,6 +23,8 @@ import { MedicationTime } from './modules/care/medication-time.entity';
 import { Appointment } from './modules/care/appointment.entity';
 import { MedicationEvent } from './modules/care/medication-event.entity';
 import { Contact } from './modules/care/contact.entity';
+import { MessagesModule } from './modules/messages/messages.module';
+import { Message } from './modules/messages/message.entity';
 
 @Module({
   imports: [
@@ -56,6 +58,7 @@ import { Contact } from './modules/care/contact.entity';
           Appointment,
           MedicationEvent,
           Contact,
+          Message,
         ],
         // v1 : le schéma est créé/aligné au démarrage. Passer aux migrations
         // TypeORM quand les données de prod seront réelles.
@@ -70,6 +73,7 @@ import { Contact } from './modules/care/contact.entity';
     AuthModule,
     AlertsModule,
     CareModule,
+    MessagesModule,
     AdminModule,
   ],
   providers: [

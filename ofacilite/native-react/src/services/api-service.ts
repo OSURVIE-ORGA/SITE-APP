@@ -89,6 +89,14 @@ export interface ServerContact {
   phone: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  fromAdmin: boolean;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
 // React Native's fetch multipart wants a { uri, name, type } part, not a Blob.
 type RNFilePart = { uri: string; name: string; type: string };
 
@@ -340,6 +348,35 @@ class ApiService {
     const res = await this.request('/me/contacts', { method: 'GET' });
     if (!res) return null;
     return (await res.json()) as ServerContact[];
+  }
+
+  // ── Messagerie avec l'administrateur ──────────────────────────────────────
+
+  /** Fil complet (marque au passage les messages de l'admin comme lus). */
+  async getMessages(): Promise<ChatMessage[] | null> {
+    const res = await this.request('/me/messages', { method: 'GET' });
+    if (!res) return null;
+    return (await res.json()) as ChatMessage[];
+  }
+
+  async sendMessage(body: string): Promise<ChatMessage | null> {
+    const res = await this.request('/me/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    });
+    if (!res) return null;
+    return (await res.json()) as ChatMessage;
+  }
+
+  /** Nombre de messages de l'admin non lus (pour la pastille de l'onglet). */
+  async getMessagesUnreadCount(): Promise<number> {
+    const res = await this.request('/me/messages/unread-count', {
+      method: 'GET',
+    });
+    if (!res) return 0;
+    const data = (await res.json()) as { count?: number };
+    return data.count ?? 0;
   }
 
   /**

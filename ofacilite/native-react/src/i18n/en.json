@@ -202,5 +202,12 @@
   "login_button": "Sign in",
   "login_error": "Wrong number. Try again.",
   "logout": "Sign out",
-  "logout_desc": "Sign out. You will need to enter your number again."
+  "logout_desc": "Sign out. You will need to enter your number again.",
+  "nav_messages": "Messages",
+  "messages_intro_tts": "Here you can write or speak to your support worker. They will reply as soon as they can.",
+  "messages_placeholder": "Write your message…",
+  "messages_send": "Send message",
+  "messages_empty": "No messages yet. Write or speak to start.",
+  "messages_admin_label": "Your support worker",
+  "messages_listen": "Listen"
 }

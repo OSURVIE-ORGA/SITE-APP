@@ -78,6 +78,15 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="messages"
+          options={{
+            title: t("nav_messages"),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="chatbubbles" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="map"
           options={{
             title: t("nav_findhelp"),

@@ -7,6 +7,7 @@ import { Login } from './pages/Login';
 import { Overview } from './pages/Overview';
 import { Users } from './pages/Users';
 import { UserDetail } from './pages/UserDetail';
+import { Messages } from './pages/Messages';
 import { Alerts } from './pages/Alerts';
 
 export function App() {
@@ -33,6 +34,7 @@ export function App() {
             <Route index element={<Overview />} />
             <Route path="users" element={<Users />} />
             <Route path="users/:id" element={<UserDetail />} />
+            <Route path="messages" element={<Messages />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
@@ -46,16 +48,21 @@ export function App() {
 
 function Shell() {
   const [unread, setUnread] = useState(0);
+  const [messagesUnread, setMessagesUnread] = useState(0);
 
   useEffect(() => {
-    const load = () =>
+    const load = () => {
       api<{ count: number }>('/admin/alerts/unread-count')
         .then((r) => setUnread(r.count))
         .catch(() => {});
+      api<{ count: number }>('/admin/messages/unread-count')
+        .then((r) => setMessagesUnread(r.count))
+        .catch(() => {});
+    };
     void load();
-    const id = setInterval(load, 60_000);
+    const id = setInterval(load, 30_000);
     return () => clearInterval(id);
   }, []);
 
-  return <Layout unread={unread} />;
+  return <Layout unread={unread} messagesUnread={messagesUnread} />;
 }
