@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import type { Response } from 'express';
 import { AppModule } from './app.module';
 import { UPLOAD_DIR } from './modules/uploads/uploads-reaper.service';
@@ -19,13 +20,15 @@ async function bootstrap() {
   // real client address from X-Forwarded-For.
   app.set('trust proxy', 1);
   app.use(helmet({ referrerPolicy: { policy: 'no-referrer' } }));
+  app.use(cookieParser());
 
-  // The mobile app is a native client (no Origin, not CORS-bound). Lock this
-  // down only if a browser frontend also calls the API (set CLIENT_URL).
+  // Le dashboard admin (navigateur) envoie le cookie de session -> credentials.
+  // origin reflété : couvre le dev (Vite sur localhost) et la prod (même hôte).
   app.enableCors({
     origin: clientUrl ?? true,
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-API-Key'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
   });
 
   app.useGlobalPipes(

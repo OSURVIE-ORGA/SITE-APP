@@ -1,4 +1,26 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ofacilite_postgres
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   api:
     build:
       context: .
@@ -6,6 +28,9 @@ services:
     image: ofacilite-api:${IMAGE_TAG:-latest}
     container_name: ofacilite_api
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     env_file:
       - .env.production
     volumes:
@@ -39,11 +64,14 @@ services:
       - .env.production
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Build statique du dashboard admin (rsync depuis `admin/dist/`).
+      - ./admin-dist:/srv/admin:ro
       - caddy_data:/data
       - caddy_config:/config
 
 volumes:
   uploads:
+  pgdata:
   caddy_data:
   caddy_config:
 

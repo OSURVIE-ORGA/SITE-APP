@@ -11,20 +11,29 @@
 {$SITE_HOST} {
 	encode zstd gzip
 
-	# Keep uploads bounded at the edge too (app enforces MAX_UPLOAD_MB).
-	request_body {
-		max_size 10MB
-	}
-
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
-		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
 		-Server
 	}
 
-	reverse_proxy api:3000 {
-		header_up X-Forwarded-Proto https
+	# Dashboard admin — build statique React (Vite), servi sous /admin.
+	handle_path /admin/* {
+		root * /srv/admin
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Tout le reste -> l'API NestJS.
+	handle {
+		# Keep uploads bounded at the edge too (app enforces MAX_UPLOAD_MB).
+		request_body {
+			max_size 10MB
+		}
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		reverse_proxy api:3000 {
+			header_up X-Forwarded-Proto https
+		}
 	}
 }

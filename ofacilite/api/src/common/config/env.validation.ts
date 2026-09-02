@@ -10,9 +10,22 @@ export const envValidationSchema = Joi.object({
 
   CLIENT_URL: Joi.string().uri().optional(),
 
-  API_KEY: Joi.string().min(24).required(),
+  // Ancienne clé partagée — conservée optionnelle (plus utilisée comme garde).
+  API_KEY: Joi.string().min(24).optional(),
 
   MISTRAL_API_KEY: Joi.string().min(16).required(),
+
+  DATABASE_URL: Joi.string()
+    .uri({ scheme: ['postgres', 'postgresql'] })
+    .required(),
+
+  JWT_SECRET: Joi.string().min(24).required(),
+  JWT_EXPIRES_IN: Joi.string().default('90d'),
+
+  // Numéro de connexion du compte admin, créé au premier démarrage.
+  ADMIN_LOGIN_CODE: Joi.string()
+    .pattern(/^[0-9]{4,16}$/)
+    .required(),
 
   MAX_UPLOAD_MB: Joi.number().integer().min(1).max(50).default(8),
 
