@@ -27,6 +27,7 @@ export interface CreateUserInput {
   birthDate?: string | null;
   language?: string;
   notes?: string | null;
+  role?: 'user' | 'admin';
 }
 
 export type UpdateUserInput = Partial<CreateUserInput> & { disabled?: boolean };
@@ -78,7 +79,7 @@ export class UsersService implements OnApplicationBootstrap {
       birthDate: input.birthDate ?? null,
       notes: input.notes ?? null,
       language: input.language ?? 'fr',
-      role: 'user',
+      role: input.role === 'admin' ? 'admin' : 'user',
       loginCode: await this.generateUniqueLoginCode(),
     });
     return this.repo.save(user);

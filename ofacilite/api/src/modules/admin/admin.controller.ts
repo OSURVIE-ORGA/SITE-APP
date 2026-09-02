@@ -13,6 +13,7 @@ import {
 import { AdminGuard } from '../../common/guards/admin.guard';
 import { toUserView } from '../users/user-view';
 import { UsersService } from '../users/users.service';
+import { LoginEventsService } from '../login-events/login-events.service';
 import { AlertsService } from './alerts.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -23,12 +24,19 @@ export class AdminController {
   constructor(
     private readonly users: UsersService,
     private readonly alerts: AlertsService,
+    private readonly loginEvents: LoginEventsService,
   ) {}
 
   // ── Statistiques ────────────────────────────────────────────────
   @Get('stats')
   stats() {
     return this.users.stats();
+  }
+
+  @Get('stats/logins')
+  loginsPerDay(@Query('days') days?: string) {
+    const n = Math.min(90, Math.max(1, Number(days) || 14));
+    return this.loginEvents.perDay(n);
   }
 
   // ── Alertes ─────────────────────────────────────────────────────

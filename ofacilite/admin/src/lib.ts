@@ -39,6 +39,11 @@ export interface Alert {
   readAt: string | null;
 }
 
+export interface LoginDay {
+  date: string;
+  count: number;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,

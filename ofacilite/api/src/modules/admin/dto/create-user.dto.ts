@@ -44,4 +44,9 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  /** 'user' (défaut) ou 'admin'. */
+  @IsOptional()
+  @IsIn(['user', 'admin'])
+  role?: 'user' | 'admin';
 }

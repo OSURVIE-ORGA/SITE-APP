@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { UsersModule } from '../users/users.module';
+import { LoginEventsModule } from '../login-events/login-events.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 @Module({
   imports: [
     UsersModule,
+    LoginEventsModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

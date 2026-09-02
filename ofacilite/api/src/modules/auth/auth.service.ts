@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { toUserView, UserView } from '../users/user-view';
+import { LoginEventsService } from '../login-events/login-events.service';
 import type { JwtPayload } from './jwt-payload';
 
 @Injectable()
@@ -9,6 +10,7 @@ export class AuthService {
   constructor(
     private readonly users: UsersService,
     private readonly jwt: JwtService,
+    private readonly loginEvents: LoginEventsService,
   ) {}
 
   async login(loginCode: string): Promise<{ token: string; user: UserView }> {
@@ -19,6 +21,7 @@ export class AuthService {
     const payload: JwtPayload = { sub: user.id, role: user.role };
     const token = await this.jwt.signAsync(payload);
     await this.users.markLoggedIn(user.id);
+    void this.loginEvents.record(user.id);
     user.lastLoginAt = new Date();
     user.lastSeenAt = user.lastLoginAt;
     return { token, user: toUserView(user) };
