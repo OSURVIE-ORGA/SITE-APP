@@ -120,123 +120,158 @@ export function Users() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Utilisateurs</h1>
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Utilisateurs</h1>
+          <p className="mt-1 text-sm text-base-content/60">
+            Comptes des personnes accompagnées et administrateurs.
+          </p>
+        </div>
         <button
-          className="btn btn-primary btn-sm"
+          className="btn btn-primary gap-2"
           onClick={() => setEditing('new')}
         >
-          + Créer un compte
+          <Icon name="plus" className="h-4 w-4" />
+          Créer un compte
         </button>
-      </div>
+      </header>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && (
+        <div className="alert alert-error">
+          <Icon name="warning" className="h-5 w-5" />
+          <span>{error}</span>
+        </div>
+      )}
 
-      <div className="card bg-base-100 shadow">
-        <div className="card-body gap-4">
-          <div className="flex flex-wrap items-center gap-3">
+      <section className="rounded-xl border border-base-300 bg-base-100 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 border-b border-base-300 p-4">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <Icon
+              name="search"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-content/40"
+            />
             <input
               type="search"
-              className="input input-sm w-full max-w-xs"
-              placeholder="Rechercher (nom, numéro)…"
+              className="input input-sm w-full pl-9"
+              placeholder="Rechercher un nom, un numéro…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="toggle toggle-sm"
-                checked={onlyInactive}
-                onChange={(e) => setOnlyInactive(e.target.checked)}
-              />
-              Inactifs &gt; 30 j
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="toggle toggle-sm"
-                checked={showAdmins}
-                onChange={(e) => setShowAdmins(e.target.checked)}
-              />
-              Voir les admins
-            </label>
-            <span className="ml-auto text-sm opacity-50">
-              {shown.length} compte(s)
-            </span>
           </div>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-base-content/70">
+            <input
+              type="checkbox"
+              className="toggle toggle-sm"
+              checked={onlyInactive}
+              onChange={(e) => setOnlyInactive(e.target.checked)}
+            />
+            Inactifs&nbsp;&gt;&nbsp;30&nbsp;j
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-base-content/70">
+            <input
+              type="checkbox"
+              className="toggle toggle-sm"
+              checked={showAdmins}
+              onChange={(e) => setShowAdmins(e.target.checked)}
+            />
+            Voir les admins
+          </label>
+          <span className="ml-auto text-sm text-base-content/45">
+            {shown.length} compte(s)
+          </span>
+        </div>
 
-          <div className="overflow-x-auto">
-            <table className="table-zebra table">
-              <thead>
+        <div className="overflow-x-auto">
+          <table className="table">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-base-content/50">
+                <th>Personne</th>
+                <th>Numéro</th>
+                <th>Âge</th>
+                <th>Langue</th>
+                <th>Dernière activité</th>
+                <th className="text-center">Actif</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
                 <tr>
-                  <th>Personne</th>
-                  <th>Numéro</th>
-                  <th>Âge</th>
-                  <th>Langue</th>
-                  <th>Activité</th>
-                  <th>Statut</th>
-                  <th className="text-right">Actions</th>
+                  <td colSpan={7} className="py-16 text-center">
+                    <span className="loading loading-spinner text-primary" />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading && (
-                  <tr>
-                    <td colSpan={7} className="py-10 text-center">
-                      <span className="loading loading-spinner" />
-                    </td>
-                  </tr>
-                )}
-                {!loading && shown.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="py-10 text-center opacity-50">
-                      Aucun compte.
-                    </td>
-                  </tr>
-                )}
-                {shown.map((u) => {
+              )}
+              {!loading && shown.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-16 text-center text-sm text-base-content/45"
+                  >
+                    Aucun compte ne correspond.
+                  </td>
+                </tr>
+              )}
+              {!loading &&
+                shown.map((u) => {
                   const dot = activityDot(u.lastSeenAt);
+                  const initials =
+                    `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
                   return (
-                    <tr key={u.id}>
+                    <tr key={u.id} className="hover:bg-base-200/50">
                       <td>
-                        <div className="flex items-center gap-2 font-medium">
-                          {u.firstName} {u.lastName}
-                          {u.role === 'admin' && (
-                            <span className="badge badge-primary badge-xs">
-                              admin
-                            </span>
-                          )}
-                        </div>
-                        {(u.phone || u.email) && (
-                          <div className="text-xs opacity-50">
-                            {u.phone ?? u.email}
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                            {initials}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 font-medium">
+                              <span className="truncate">
+                                {u.firstName} {u.lastName}
+                              </span>
+                              {u.role === 'admin' && (
+                                <span className="badge badge-primary badge-sm">
+                                  admin
+                                </span>
+                              )}
+                            </div>
+                            {(u.phone || u.email) && (
+                              <div className="truncate text-xs text-base-content/50">
+                                {u.phone ?? u.email}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </td>
                       <td>
-                        <span className="badge badge-ghost font-mono tracking-wider">
+                        <span className="rounded-md bg-base-200 px-2 py-1 font-mono text-sm tracking-wider">
                           {u.loginCode}
                         </span>
                       </td>
-                      <td>{u.age ?? '—'}</td>
-                      <td>{LANGS[u.language] ?? u.language}</td>
+                      <td className="tabular-nums text-base-content/70">
+                        {u.age ?? '—'}
+                      </td>
+                      <td className="text-base-content/70">
+                        {LANGS[u.language] ?? u.language}
+                      </td>
                       <td>
                         <span
                           className="flex items-center gap-2"
                           title={dot.label}
                         >
                           <span
-                            className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${dot.cls}`}
+                            className={`h-2 w-2 shrink-0 rounded-full ${dot.cls}`}
                           />
-                          <span className="text-sm">
+                          <span className="text-sm text-base-content/70">
                             {relativeTime(u.lastSeenAt)}
                           </span>
                         </span>
                       </td>
-                      <td>
+                      <td className="text-center">
                         <input
                           type="checkbox"
-                          className="toggle toggle-success toggle-sm"
+                          className="toggle toggle-success toggle-sm align-middle"
                           checked={!u.disabled}
                           disabled={busyId === u.id}
                           onChange={(e) =>
@@ -247,50 +282,48 @@ export function Users() {
                               ? 'Réactiver le compte'
                               : 'Désactiver le compte'
                           }
-                          title={u.disabled ? 'Compte désactivé' : 'Compte actif'}
+                          title={
+                            u.disabled ? 'Compte désactivé' : 'Compte actif'
+                          }
                         />
                       </td>
                       <td>
-                        <div className="flex justify-end gap-1">
-                          <div className="tooltip" data-tip="Modifier">
-                            <button
-                              className="btn btn-square btn-ghost btn-sm"
-                              onClick={() => setEditing(u)}
-                              aria-label="Modifier"
-                            >
-                              <Icon name="edit" />
-                            </button>
-                          </div>
-                          <div className="tooltip" data-tip="Nouveau numéro">
-                            <button
-                              className="btn btn-square btn-ghost btn-sm"
-                              disabled={busyId === u.id}
-                              onClick={() => void regenerate(u)}
-                              aria-label="Nouveau numéro"
-                            >
-                              <Icon name="code" />
-                            </button>
-                          </div>
-                          <div className="tooltip" data-tip="Supprimer">
-                            <button
-                              className="btn btn-square btn-ghost btn-sm text-error"
-                              disabled={busyId === u.id}
-                              onClick={() => void remove(u)}
-                              aria-label="Supprimer"
-                            >
-                              <Icon name="trash" />
-                            </button>
-                          </div>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            className="btn btn-square btn-ghost btn-sm hover:text-primary"
+                            onClick={() => setEditing(u)}
+                            aria-label="Modifier"
+                            title="Modifier"
+                          >
+                            <Icon name="edit" />
+                          </button>
+                          <button
+                            className="btn btn-square btn-ghost btn-sm"
+                            disabled={busyId === u.id}
+                            onClick={() => void regenerate(u)}
+                            aria-label="Nouveau numéro"
+                            title="Nouveau numéro"
+                          >
+                            <Icon name="code" />
+                          </button>
+                          <button
+                            className="btn btn-square btn-ghost btn-sm hover:text-error"
+                            disabled={busyId === u.id}
+                            onClick={() => void remove(u)}
+                            aria-label="Supprimer"
+                            title="Supprimer"
+                          >
+                            <Icon name="trash" />
+                          </button>
                         </div>
                       </td>
                     </tr>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+            </tbody>
+          </table>
         </div>
-      </div>
+      </section>
 
       {editing && (
         <UserFormModal
@@ -368,59 +401,86 @@ function UserFormModal({
   };
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-lg">
-        <h3 className="text-lg font-bold">
-          {user ? 'Modifier le compte' : 'Nouveau compte'}
-        </h3>
+    <div
+      className="modal modal-open modal-bottom sm:modal-middle"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="modal-box border border-base-300 sm:max-w-xl">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">
+            {user ? 'Modifier le compte' : 'Nouveau compte'}
+          </h3>
+          <button
+            type="button"
+            className="btn btn-square btn-ghost btn-sm"
+            onClick={onClose}
+            aria-label="Fermer"
+          >
+            <Icon name="close" className="h-4 w-4" />
+          </button>
+        </div>
 
         {createdCode ? (
-          <div className="space-y-4 py-4">
-            <p className="text-sm">
-              Compte créé. Numéro de connexion à communiquer à la personne :
+          <div className="space-y-4 py-6 text-center">
+            <p className="text-sm text-base-content/70">
+              Compte créé. Communiquez ce numéro de connexion à la personne :
             </p>
-            <div className="rounded-box bg-base-200 py-6 text-center font-mono text-4xl tracking-[0.3em]">
-              {createdCode}
+            <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-6">
+              <div className="select-all font-mono text-4xl font-semibold tracking-[0.35em] text-base-content">
+                {createdCode}
+              </div>
             </div>
-            <div className="modal-action">
-              <button className="btn btn-primary" onClick={onSaved}>
-                Terminé
-              </button>
-            </div>
+            <button className="btn btn-primary btn-block" onClick={onSaved}>
+              Terminé
+            </button>
           </div>
         ) : (
-          <form className="space-y-3 py-4" onSubmit={submit}>
+          <form className="space-y-5 pt-4" onSubmit={submit}>
             {!user && (
-              <div className="join">
-                <button
-                  type="button"
-                  className={`btn join-item btn-sm ${
-                    f.role === 'user' ? 'btn-primary' : ''
-                  }`}
-                  onClick={() => set('role', 'user')}
-                >
-                  Utilisateur
-                </button>
-                <button
-                  type="button"
-                  className={`btn join-item btn-sm ${
-                    f.role === 'admin' ? 'btn-primary' : ''
-                  }`}
-                  onClick={() => set('role', 'admin')}
-                >
-                  Administrateur
-                </button>
+              <div>
+                <span className="mb-1.5 block text-sm font-medium text-base-content/80">
+                  Type de compte
+                </span>
+                <div className="join w-full">
+                  <button
+                    type="button"
+                    className={`btn join-item flex-1 ${
+                      f.role === 'user'
+                        ? 'btn-primary'
+                        : 'btn-ghost border border-base-300'
+                    }`}
+                    onClick={() => set('role', 'user')}
+                    aria-pressed={f.role === 'user'}
+                  >
+                    Utilisateur
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn join-item flex-1 ${
+                      f.role === 'admin'
+                        ? 'btn-primary'
+                        : 'btn-ghost border border-base-300'
+                    }`}
+                    onClick={() => set('role', 'admin')}
+                    aria-pressed={f.role === 'admin'}
+                  >
+                    Administrateur
+                  </button>
+                </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
-                label="Prénom *"
+                label="Prénom"
+                required
                 value={f.firstName}
                 onChange={(v) => set('firstName', v)}
               />
               <Field
-                label="Nom *"
+                label="Nom"
+                required
                 value={f.lastName}
                 onChange={(v) => set('lastName', v)}
               />
@@ -442,7 +502,9 @@ function UserFormModal({
                 onChange={(v) => set('birthDate', v)}
               />
               <div>
-                <label className="mb-1 block text-sm font-medium">Langue</label>
+                <label className="mb-1.5 block text-sm font-medium text-base-content/80">
+                  Langue
+                </label>
                 <select
                   className="select w-full"
                   value={f.language}
@@ -456,29 +518,42 @@ function UserFormModal({
                 </select>
               </div>
             </div>
+
             <div>
-              <label className="mb-1 block text-sm font-medium">Notes</label>
+              <label className="mb-1.5 block text-sm font-medium text-base-content/80">
+                Notes
+              </label>
               <textarea
                 className="textarea w-full"
-                rows={2}
+                rows={3}
                 value={f.notes}
                 onChange={(e) => set('notes', e.target.value)}
+                placeholder="Informations utiles (facultatif)"
               />
             </div>
 
             {error && (
-              <div className="alert alert-error py-2 text-sm">{error}</div>
+              <div className="alert alert-error py-2 text-sm">
+                <Icon name="warning" className="h-4 w-4" />
+                <span>{error}</span>
+              </div>
             )}
 
-            <div className="modal-action">
-              <button type="button" className="btn btn-ghost" onClick={onClose}>
+            <div className="flex justify-end gap-2 border-t border-base-200 pt-4">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={onClose}
+              >
                 Annuler
               </button>
               <button
                 className="btn btn-primary"
                 disabled={busy || !f.firstName.trim() || !f.lastName.trim()}
               >
-                {busy && <span className="loading loading-spinner loading-sm" />}
+                {busy && (
+                  <span className="loading loading-spinner loading-sm" />
+                )}
                 Enregistrer
               </button>
             </div>
@@ -500,17 +575,23 @@ function Field({
   value,
   onChange,
   type = 'text',
+  required = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  required?: boolean;
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium">{label}</label>
+      <label className="mb-1.5 block text-sm font-medium text-base-content/80">
+        {label}
+        {required && <span className="text-error"> *</span>}
+      </label>
       <input
         type={type}
+        required={required}
         className="input w-full"
         value={value}
         onChange={(e) => onChange(e.target.value)}

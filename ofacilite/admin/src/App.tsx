@@ -13,8 +13,9 @@ export function App() {
 
   if (loading) {
     return (
-      <div className="grid min-h-full place-items-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-base-200">
         <span className="loading loading-spinner loading-lg text-primary" />
+        <p className="text-sm text-base-content/50">Chargement…</p>
       </div>
     );
   }
