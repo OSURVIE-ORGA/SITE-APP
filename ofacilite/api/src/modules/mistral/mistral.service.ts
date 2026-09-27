@@ -9,6 +9,10 @@ import { Mistral } from '@mistralai/mistralai';
 
 const MODEL = 'mistral-small-latest';
 
+/** Retry settings for Mistral 429 (rate limit) responses. */
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+
 export interface ContactExtraction {
   name: string | null;
   phone: string | null;
@@ -41,19 +45,32 @@ export class MistralService {
     messages: Parameters<Mistral['chat']['complete']>[0]['messages'],
   ): Promise<string> {
     let content: unknown;
-    try {
-      const response = await this.client.chat.complete({
-        model: MODEL,
-        messages,
-      });
-      content = response.choices?.[0]?.message?.content;
-    } catch (err) {
-      this.logger.error(
-        `Mistral call failed: ${(err as Error).message ?? String(err)}`,
-      );
-      throw new BadGatewayException(
-        'Le service IA est momentanément indisponible.',
-      );
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const response = await this.client.chat.complete({
+          model: MODEL,
+          messages,
+        });
+        content = response.choices?.[0]?.message?.content;
+        break;
+      } catch (err) {
+        // Mistral's rate limit (429) is usually transient: wait and retry a few
+        // times with exponential backoff before giving up.
+        if (isRateLimitError(err) && attempt < MAX_RETRIES) {
+          const delay = BASE_DELAY_MS * 2 ** attempt;
+          this.logger.warn(
+            `Mistral rate limited (429), retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms`,
+          );
+          await sleep(delay);
+          continue;
+        }
+        this.logger.error(
+          `Mistral call failed: ${(err as Error).message ?? String(err)}`,
+        );
+        throw new BadGatewayException(
+          'Le service IA est momentanément indisponible.',
+        );
+      }
     }
     if (!content) {
       throw new NotFoundException('Aucune réponse de Mistral');
@@ -280,6 +297,24 @@ Règles :
 - Si une valeur est introuvable, mets null.
 - Ne retourne aucun texte avant ou après le JSON.
 `;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * True when the Mistral SDK error is an HTTP 429 (rate limit). The SDK exposes
+ * `statusCode` on its error objects; we also fall back to matching the message
+ * string in case that shape changes.
+ */
+function isRateLimitError(err: unknown): boolean {
+  const status =
+    (err as { statusCode?: number; status?: number })?.statusCode ??
+    (err as { status?: number })?.status;
+  if (status === 429) return true;
+  const message = (err as Error)?.message ?? '';
+  return /\b429\b|rate limit/i.test(message);
 }
 
 function asStringOrNull(value: unknown): string | null {
